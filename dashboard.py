@@ -61,12 +61,36 @@ st.subheader("📅 기간 선택")
 min_date = df['Created Date'].min()
 max_date = df['Created Date'].max()
 
-col_filter1, col_filter2, col_filter3 = st.columns([1, 1, 2])
+# 월 목록 생성
+df['Year-Month'] = pd.to_datetime(df['Created Date']).apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
+available_months = sorted(df['Year-Month'].dropna().unique(), reverse=True)
+
+# 월 선택
+col_month, col_filter1, col_filter2 = st.columns([1, 1, 1])
+
+with col_month:
+    month_options = ["전체 기간"] + list(available_months)
+    selected_month = st.selectbox(
+        "월 선택",
+        options=month_options,
+        index=0
+    )
+
+# 월 선택에 따른 날짜 범위 설정
+if selected_month != "전체 기간":
+    year, month = map(int, selected_month.split('-'))
+    import calendar
+    last_day = calendar.monthrange(year, month)[1]
+    default_start = pd.Timestamp(year, month, 1).date()
+    default_end = pd.Timestamp(year, month, last_day).date()
+else:
+    default_start = min_date
+    default_end = max_date
 
 with col_filter1:
     start_date = st.date_input(
         "시작일",
-        value=min_date,
+        value=default_start,
         min_value=min_date,
         max_value=max_date
     )
@@ -74,32 +98,35 @@ with col_filter1:
 with col_filter2:
     end_date = st.date_input(
         "종료일",
-        value=max_date,
+        value=default_end,
         min_value=min_date,
         max_value=max_date
     )
 
-with col_filter3:
-    # 빠른 선택 버튼
-    st.write("빠른 선택:")
-    quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
+# 빠른 선택 버튼
+st.write("빠른 선택:")
+quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
-    with quick_col1:
-        if st.button("최근 7일"):
-            end_date = max_date
-            start_date = max_date - pd.Timedelta(days=6)
-    with quick_col2:
-        if st.button("최근 14일"):
-            end_date = max_date
-            start_date = max_date - pd.Timedelta(days=13)
-    with quick_col3:
-        if st.button("최근 30일"):
-            end_date = max_date
-            start_date = max_date - pd.Timedelta(days=29)
-    with quick_col4:
-        if st.button("전체 기간"):
-            start_date = min_date
-            end_date = max_date
+with quick_col1:
+    if st.button("최근 7일"):
+        st.session_state['start_date'] = max_date - pd.Timedelta(days=6)
+        st.session_state['end_date'] = max_date
+        st.rerun()
+with quick_col2:
+    if st.button("최근 14일"):
+        st.session_state['start_date'] = max_date - pd.Timedelta(days=13)
+        st.session_state['end_date'] = max_date
+        st.rerun()
+with quick_col3:
+    if st.button("최근 30일"):
+        st.session_state['start_date'] = max_date - pd.Timedelta(days=29)
+        st.session_state['end_date'] = max_date
+        st.rerun()
+with quick_col4:
+    if st.button("전체"):
+        st.session_state['start_date'] = min_date
+        st.session_state['end_date'] = max_date
+        st.rerun()
 
 # 날짜 필터 적용
 df = df[(df['Created Date'] >= start_date) & (df['Created Date'] <= end_date)]
