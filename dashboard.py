@@ -58,11 +58,17 @@ with col_info:
 # ===== 날짜 필터 =====
 st.subheader("📅 기간 선택")
 
-min_date = df['Created Date'].min()
-max_date = df['Created Date'].max()
+# NaT 값 제거 후 min/max 계산
+valid_dates = df['Created Date'].dropna()
+if len(valid_dates) == 0:
+    st.error("유효한 날짜 데이터가 없습니다.")
+    st.stop()
+
+min_date = valid_dates.min()
+max_date = valid_dates.max()
 
 # 월 목록 생성
-df['Year-Month'] = pd.to_datetime(df['Created Date']).apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
+df['Year-Month'] = df['Created Date'].apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
 available_months = sorted(df['Year-Month'].dropna().unique(), reverse=True)
 
 # 월 선택
