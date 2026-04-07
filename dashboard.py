@@ -285,8 +285,11 @@ with st.expander("📋 날짜별 상세 데이터"):
 
 st.markdown("---")
 
-# ===== 4. SKU별 현황 =====
-st.subheader("📦 Seller SKU별 주문/취소 현황")
+# ===== 4. 제품별 현황 =====
+st.subheader("📦 제품별 주문/취소 현황")
+
+# Product Name 매핑 테이블 생성
+product_name_map = df.groupby('Seller SKU')['Product Name'].first()
 
 sku_all = df.groupby('Seller SKU').agg({
     'Quantity': 'sum',
@@ -298,40 +301,50 @@ sku_canceled = df[df['Order Status'] == 'Canceled'].groupby('Seller SKU').agg({
 }).rename(columns={'Quantity': '취소수량'})
 
 sku_summary = sku_all.join(sku_canceled).fillna(0).reset_index()
+sku_summary['Product Name'] = sku_summary['Seller SKU'].map(product_name_map)
 sku_summary['정상수량'] = sku_summary['전체수량'] - sku_summary['취소수량']
 sku_summary['취소율(%)'] = (sku_summary['취소수량'] / sku_summary['전체수량'] * 100).round(1)
 sku_summary = sku_summary.sort_values('전체수량', ascending=False)
 
+# 차트용 짧은 이름 생성 (처음 30자만 표시)
+sku_summary['Product Name Short'] = sku_summary['Product Name'].apply(
+    lambda x: x[:30] + '...' if isinstance(x, str) and len(x) > 30 else x
+)
+
 col1, col2 = st.columns(2)
 
 with col1:
-    # 상위 10개 SKU
+    # 상위 10개 제품
     top_sku = sku_summary.head(10)
     fig_sku = px.bar(
         top_sku,
-        x='Seller SKU',
+        x='Product Name Short',
         y=['정상수량', '취소수량'],
         barmode='stack',
-        title='상위 10개 SKU 판매 현황',
+        title='상위 10개 제품 판매 현황',
         color_discrete_map={'정상수량': '#4CAF50', '취소수량': '#f44336'}
     )
+    fig_sku.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_sku, use_container_width=True)
 
 with col2:
-    # 취소율 높은 SKU (최소 10개 이상)
+    # 취소율 높은 제품 (최소 10개 이상)
     high_cancel_sku = sku_summary[sku_summary['전체수량'] >= 10].nlargest(10, '취소율(%)')
     fig_cancel_sku = px.bar(
         high_cancel_sku,
-        x='Seller SKU',
+        x='Product Name Short',
         y='취소율(%)',
-        title='취소율 상위 10개 SKU (최소 10개 이상 주문)',
+        title='취소율 상위 10개 제품 (최소 10개 이상 주문)',
         color='취소율(%)',
         color_continuous_scale='Reds'
     )
+    fig_cancel_sku.update_layout(xaxis_tickangle=-45)
     st.plotly_chart(fig_cancel_sku, use_container_width=True)
 
-with st.expander("📋 SKU별 상세 데이터"):
-    st.dataframe(sku_summary, use_container_width=True)
+with st.expander("📋 제품별 상세 데이터"):
+    # Product Name 열을 앞에 배치
+    display_cols = ['Product Name', 'Seller SKU', '전체수량', '정상수량', '취소수량', '취소율(%)', '전체주문건수']
+    st.dataframe(sku_summary[display_cols], use_container_width=True)
 
 st.markdown("---")
 
