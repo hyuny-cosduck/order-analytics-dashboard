@@ -10,3 +10,9 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Sensitive files - DO NOT commit
+*service_account*.json
+data-center-dashboard*.json
+brands.json
+.streamlit/secrets.toml
