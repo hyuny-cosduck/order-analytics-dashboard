@@ -10,7 +10,17 @@ import sheets_manager
 
 
 def _load_brands() -> Dict:
-    """Load brands from JSON file."""
+    """Load brands from JSON file or Streamlit secrets."""
+    import streamlit as st
+
+    # Try to load from Streamlit secrets first (for cloud deployment)
+    try:
+        if "brands" in st.secrets:
+            return dict(st.secrets["brands"])
+    except Exception:
+        pass
+
+    # Fall back to JSON file (for local development)
     if not os.path.exists(config.BRANDS_FILE):
         return {}
     try:
