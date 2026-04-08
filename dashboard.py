@@ -40,8 +40,14 @@ def logout():
 # ===== CHECK ADMIN ROUTE =====
 def is_admin_route():
     """Check if accessing via admin route (?admin=true)"""
-    params = st.query_params
-    return params.get("admin") == "true"
+    try:
+        admin_param = st.query_params.get("admin", "")
+        # Handle both string and list returns
+        if isinstance(admin_param, list):
+            return "true" in admin_param
+        return admin_param == "true"
+    except Exception:
+        return False
 
 
 # ===== BRAND LOGIN PAGE =====
