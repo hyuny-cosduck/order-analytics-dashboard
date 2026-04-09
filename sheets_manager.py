@@ -103,15 +103,18 @@ def read_sheet_data(sheet_id: str) -> Tuple[Optional[pd.DataFrame], Optional[str
         return None, str(e)
 
 
-def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional[str], int]:
+def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional[str], int, int]:
     """
-    Append DataFrame rows to the sheet, skipping exact duplicate rows.
-    Returns (rows_added, error_message, duplicates_skipped).
+    Append/update DataFrame rows in the sheet.
+    - Updates existing rows if Order ID + SKU ID match
+    - Appends new rows otherwise
+    - Skips exact duplicates
+    Returns (rows_added, error_message, rows_updated, duplicates_skipped).
     """
     try:
         spreadsheet = get_sheet_by_id(sheet_id)
         if spreadsheet is None:
-            return 0, "Sheet not found", 0
+            return 0, "Sheet not found", 0, 0
 
         worksheet = spreadsheet.sheet1
 
@@ -119,12 +122,11 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         existing_headers = worksheet.row_values(1)
 
         # Reorder DataFrame columns to match sheet headers
-        # Only include columns that exist in the sheet
         df_to_append = df.copy()
         columns_to_use = [col for col in existing_headers if col in df_to_append.columns]
 
         if not columns_to_use:
-            return 0, "No matching columns found between upload and sheet", 0
+            return 0, "No matching columns found between upload and sheet", 0, 0
 
         # Reorder and select columns
         df_ordered = df_to_append[columns_to_use]
@@ -137,35 +139,80 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         # Ensure column order matches sheet
         df_ordered = df_ordered[existing_headers]
 
-        # Get existing data for duplicate detection
+        # Get existing data
         existing_data = worksheet.get_all_values()
-        existing_rows = set()
-        if len(existing_data) > 1:
-            # Convert existing rows to tuples of strings for comparison
-            for row in existing_data[1:]:  # Skip header
-                existing_rows.add(tuple(str(cell) for cell in row))
 
-        # Convert new data and filter out duplicates
-        new_values = []
+        # Find key column indices (Order ID + SKU identifier)
+        order_id_idx = existing_headers.index('Order ID') if 'Order ID' in existing_headers else None
+        # Try different SKU column names
+        sku_idx = None
+        for sku_col in ['SKU ID', 'Seller SKU', 'SKU']:
+            if sku_col in existing_headers:
+                sku_idx = existing_headers.index(sku_col)
+                break
+
+        # Build map of existing rows: (order_id, sku) -> (row_number, row_data)
+        existing_map = {}
+        existing_rows_set = set()  # For exact duplicate detection
+        if len(existing_data) > 1 and order_id_idx is not None:
+            for i, row in enumerate(existing_data[1:], start=2):  # Row 2 onwards (1-indexed)
+                row_tuple = tuple(str(cell) for cell in row)
+                existing_rows_set.add(row_tuple)
+
+                order_id = row[order_id_idx] if order_id_idx < len(row) else ''
+                sku = row[sku_idx] if sku_idx is not None and sku_idx < len(row) else ''
+                key = (str(order_id), str(sku))
+                existing_map[key] = (i, row)
+
+        # Process incoming rows
+        new_rows = []
+        updates = []  # List of (row_number, row_data)
         duplicates_skipped = 0
+        seen_keys = set()  # Track keys within this upload to handle duplicates in file
+
         for _, row in df_ordered.iterrows():
-            row_tuple = tuple(str(cell) for cell in row.values)
-            if row_tuple not in existing_rows:
-                new_values.append(list(row.values))
-                existing_rows.add(row_tuple)  # Prevent duplicates within upload file too
-            else:
+            row_values = [str(cell) for cell in row.values]
+            row_tuple = tuple(row_values)
+
+            # Skip exact duplicates
+            if row_tuple in existing_rows_set:
                 duplicates_skipped += 1
+                continue
 
-        if len(new_values) == 0:
-            return 0, None, duplicates_skipped
+            order_id = row_values[order_id_idx] if order_id_idx is not None else ''
+            sku = row_values[sku_idx] if sku_idx is not None else ''
+            key = (order_id, sku)
 
-        # Append to sheet
-        worksheet.append_rows(new_values, value_input_option='USER_ENTERED')
+            # Skip if we've already processed this key in current upload (keep latest)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
 
-        return len(new_values), None, duplicates_skipped
+            if key in existing_map and order_id:  # Only update if we have a valid order_id
+                row_num, _ = existing_map[key]
+                updates.append((row_num, row_values))
+                existing_rows_set.add(row_tuple)
+            else:
+                new_rows.append(row_values)
+                existing_rows_set.add(row_tuple)
+
+        # Perform batch updates
+        rows_updated = 0
+        if updates:
+            for row_num, row_data in updates:
+                worksheet.update(f'A{row_num}', [row_data])
+                rows_updated += 1
+
+        # Append new rows
+        rows_added = 0
+        if new_rows:
+            worksheet.append_rows(new_rows, value_input_option='USER_ENTERED')
+            rows_added = len(new_rows)
+
+        return rows_added, None, rows_updated, duplicates_skipped
 
     except Exception as e:
-        return 0, str(e), 0
+        return 0, str(e), 0, 0
 
 
 def list_sheets_in_folder() -> List[Dict]:
