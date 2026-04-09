@@ -196,14 +196,21 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
                 new_rows.append(row_values)
                 existing_rows_set.add(row_tuple)
 
-        # Perform batch updates
+        # Perform batch updates (all at once to avoid rate limits)
         rows_updated = 0
         if updates:
+            # Use gspread's batch_update with proper range format
+            batch_data = []
             for row_num, row_data in updates:
-                worksheet.update(f'A{row_num}', [row_data])
-                rows_updated += 1
+                # Just specify starting cell - gspread will infer the range from values
+                batch_data.append({
+                    'range': f'A{row_num}',
+                    'values': [row_data]
+                })
+            worksheet.batch_update(batch_data, value_input_option='USER_ENTERED')
+            rows_updated = len(updates)
 
-        # Append new rows
+        # Append new rows (also batched)
         rows_added = 0
         if new_rows:
             worksheet.append_rows(new_rows, value_input_option='USER_ENTERED')
