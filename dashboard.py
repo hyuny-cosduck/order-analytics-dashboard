@@ -255,17 +255,20 @@ def show_brand_dashboard():
 
 def show_upload_section(sheet_id: str, brand_name: str):
     st.subheader("📤 Upload Order Data")
-    st.caption("Upload an Excel file to append data to the Google Sheet.")
+    st.caption("Upload an Excel or CSV file to append data to the Google Sheet.")
 
     uploaded_file = st.file_uploader(
-        "Choose an Excel file",
-        type=['xlsx', 'xls'],
-        help="Upload order data in Excel format"
+        "Choose a file",
+        type=['xlsx', 'xls', 'csv'],
+        help="Upload order data in Excel or CSV format"
     )
 
     if uploaded_file is not None:
         try:
-            df_upload = pd.read_excel(uploaded_file)
+            if uploaded_file.name.endswith('.csv'):
+                df_upload = pd.read_csv(uploaded_file)
+            else:
+                df_upload = pd.read_excel(uploaded_file)
 
             st.success(f"File loaded: **{uploaded_file.name}**")
             st.write(f"**Rows:** {len(df_upload):,} | **Columns:** {len(df_upload.columns)}")
