@@ -27,6 +27,11 @@ if 'brand_name' not in st.session_state:
 if 'brand_data' not in st.session_state:
     st.session_state.brand_data = None
 
+# ===== One-time migration from JSON file to Google Sheet =====
+if 'migration_done' not in st.session_state:
+    brands_manager.migrate_from_json_file()
+    st.session_state.migration_done = True
+
 
 def logout():
     """Clear session and logout."""

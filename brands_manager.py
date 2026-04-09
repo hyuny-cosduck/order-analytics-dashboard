@@ -4,36 +4,19 @@ import json
 import os
 import secrets
 import string
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, Tuple
 import config
 import sheets_manager
 
 
 def _load_brands() -> Dict:
-    """Load brands from JSON file or Streamlit secrets."""
-    import streamlit as st
-
-    # Try to load from Streamlit secrets first (for cloud deployment)
-    try:
-        if "brands" in st.secrets:
-            return dict(st.secrets["brands"])
-    except Exception:
-        pass
-
-    # Fall back to JSON file (for local development)
-    if not os.path.exists(config.BRANDS_FILE):
-        return {}
-    try:
-        with open(config.BRANDS_FILE, 'r') as f:
-            return json.load(f)
-    except:
-        return {}
+    """Load brands from Google Sheet (persistent storage)."""
+    return sheets_manager.load_brands_from_sheet()
 
 
 def _save_brands(brands: Dict) -> None:
-    """Save brands to JSON file."""
-    with open(config.BRANDS_FILE, 'w') as f:
-        json.dump(brands, f, indent=2)
+    """Save brands to Google Sheet (persistent storage)."""
+    sheets_manager.save_brands_to_sheet(brands)
 
 
 def generate_password(brand_name: str = "") -> str:
@@ -199,3 +182,40 @@ def import_existing_sheet(brand_name: str, sheet_id: str) -> Tuple[Optional[Dict
     _save_brands(brands)
 
     return {**brand_data, 'name': brand_name}, None
+
+
+def migrate_from_json_file() -> Tuple[int, Optional[str]]:
+    """
+    Migrate brands from the local JSON file to Google Sheet storage.
+    This is a one-time migration for existing local setups.
+    Returns (brands_migrated, error_message).
+    """
+    # Check if JSON file exists
+    if not os.path.exists(config.BRANDS_FILE):
+        return 0, None
+
+    # Load brands from JSON file
+    try:
+        with open(config.BRANDS_FILE, 'r') as f:
+            json_brands = json.load(f)
+    except Exception as e:
+        return 0, f"Failed to read JSON file: {str(e)}"
+
+    if not json_brands:
+        return 0, None
+
+    # Load existing brands from sheet
+    sheet_brands = _load_brands()
+
+    # Merge - only add brands that don't already exist in sheet
+    brands_added = 0
+    for name, data in json_brands.items():
+        if not any(n.lower() == name.lower() for n in sheet_brands.keys()):
+            sheet_brands[name] = data
+            brands_added += 1
+
+    # Save merged brands to sheet
+    if brands_added > 0:
+        _save_brands(sheet_brands)
+
+    return brands_added, None

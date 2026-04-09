@@ -208,3 +208,90 @@ def get_sheet_row_count(sheet_id: str) -> int:
         return max(0, len(worksheet.get_all_values()) - 1)
     except:
         return 0
+
+
+# Config sheet functions for persistent brand storage
+CONFIG_SHEET_NAME = "_DataCenterConfig"
+
+
+def _get_or_create_config_sheet() -> gspread.Spreadsheet:
+    """Get the config sheet, creating it if it doesn't exist."""
+    client = get_client()
+
+    # Try to find existing config sheet in the folder
+    try:
+        files = client.list_spreadsheet_files()
+        for f in files:
+            if f['name'] == CONFIG_SHEET_NAME:
+                return client.open_by_key(f['id'])
+    except:
+        pass
+
+    # Create new config sheet
+    spreadsheet = client.create(CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID)
+
+    # Set up brands worksheet
+    worksheet = spreadsheet.sheet1
+    worksheet.update_title("Brands")
+    worksheet.update('A1', [["brand_name", "sheet_id", "sheet_url", "password"]])
+    worksheet.format('A1:D1', {
+        'textFormat': {'bold': True},
+        'backgroundColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9}
+    })
+
+    return spreadsheet
+
+
+def load_brands_from_sheet() -> Dict:
+    """Load all brands from the config sheet."""
+    try:
+        spreadsheet = _get_or_create_config_sheet()
+        worksheet = spreadsheet.sheet1
+        data = worksheet.get_all_values()
+
+        if len(data) <= 1:
+            return {}
+
+        brands = {}
+        for row in data[1:]:  # Skip header
+            if len(row) >= 4 and row[0]:  # Has brand_name
+                brands[row[0]] = {
+                    'sheet_id': row[1],
+                    'sheet_url': row[2],
+                    'password': row[3]
+                }
+        return brands
+    except Exception as e:
+        print(f"Error loading brands from sheet: {e}")
+        return {}
+
+
+def save_brands_to_sheet(brands: Dict) -> bool:
+    """Save all brands to the config sheet."""
+    try:
+        spreadsheet = _get_or_create_config_sheet()
+        worksheet = spreadsheet.sheet1
+
+        # Clear existing data (except header)
+        worksheet.clear()
+
+        # Write header
+        worksheet.update('A1', [["brand_name", "sheet_id", "sheet_url", "password"]])
+
+        # Write brand data
+        if brands:
+            rows = []
+            for name, data in brands.items():
+                rows.append([
+                    name,
+                    data.get('sheet_id', ''),
+                    data.get('sheet_url', ''),
+                    data.get('password', '')
+                ])
+            if rows:
+                worksheet.update('A2', rows)
+
+        return True
+    except Exception as e:
+        print(f"Error saving brands to sheet: {e}")
+        return False
