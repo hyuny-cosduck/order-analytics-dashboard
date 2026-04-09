@@ -284,14 +284,20 @@ def show_upload_section(sheet_id: str, brand_name: str):
 
             # Upload button
             if st.button("📤 Append to Google Sheet", type="primary"):
-                with st.spinner("Uploading data..."):
-                    rows_added, error = sheets_manager.append_data_to_sheet(sheet_id, df_upload)
+                with st.spinner("Uploading data... (checking for duplicates)"):
+                    rows_added, error, duplicates_skipped = sheets_manager.append_data_to_sheet(sheet_id, df_upload)
                     if error:
                         st.error(f"Upload failed: {error}")
                     else:
-                        st.success(f"Successfully appended **{rows_added:,}** rows to the sheet!")
+                        if rows_added > 0:
+                            st.success(f"Successfully appended **{rows_added:,}** rows to the sheet!")
+                        if duplicates_skipped > 0:
+                            st.info(f"Skipped **{duplicates_skipped:,}** duplicate rows (already exist in sheet)")
+                        if rows_added == 0 and duplicates_skipped > 0:
+                            st.warning("All rows were duplicates - nothing new to add.")
                         st.cache_data.clear()
-                        st.balloons()
+                        if rows_added > 0:
+                            st.balloons()
 
         except Exception as e:
             st.error(f"Error reading file: {str(e)}")

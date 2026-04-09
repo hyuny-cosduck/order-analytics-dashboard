@@ -103,15 +103,15 @@ def read_sheet_data(sheet_id: str) -> Tuple[Optional[pd.DataFrame], Optional[str
         return None, str(e)
 
 
-def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional[str]]:
+def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional[str], int]:
     """
-    Append DataFrame rows to the sheet.
-    Returns (rows_added, error_message).
+    Append DataFrame rows to the sheet, skipping exact duplicate rows.
+    Returns (rows_added, error_message, duplicates_skipped).
     """
     try:
         spreadsheet = get_sheet_by_id(sheet_id)
         if spreadsheet is None:
-            return 0, "Sheet not found"
+            return 0, "Sheet not found", 0
 
         worksheet = spreadsheet.sheet1
 
@@ -124,7 +124,7 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         columns_to_use = [col for col in existing_headers if col in df_to_append.columns]
 
         if not columns_to_use:
-            return 0, "No matching columns found between upload and sheet"
+            return 0, "No matching columns found between upload and sheet", 0
 
         # Reorder and select columns
         df_ordered = df_to_append[columns_to_use]
@@ -137,19 +137,35 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         # Ensure column order matches sheet
         df_ordered = df_ordered[existing_headers]
 
-        # Convert to list of lists
-        values = df_ordered.values.tolist()
+        # Get existing data for duplicate detection
+        existing_data = worksheet.get_all_values()
+        existing_rows = set()
+        if len(existing_data) > 1:
+            # Convert existing rows to tuples of strings for comparison
+            for row in existing_data[1:]:  # Skip header
+                existing_rows.add(tuple(str(cell) for cell in row))
 
-        if len(values) == 0:
-            return 0, "No data to append"
+        # Convert new data and filter out duplicates
+        new_values = []
+        duplicates_skipped = 0
+        for _, row in df_ordered.iterrows():
+            row_tuple = tuple(str(cell) for cell in row.values)
+            if row_tuple not in existing_rows:
+                new_values.append(list(row.values))
+                existing_rows.add(row_tuple)  # Prevent duplicates within upload file too
+            else:
+                duplicates_skipped += 1
+
+        if len(new_values) == 0:
+            return 0, None, duplicates_skipped
 
         # Append to sheet
-        worksheet.append_rows(values, value_input_option='USER_ENTERED')
+        worksheet.append_rows(new_values, value_input_option='USER_ENTERED')
 
-        return len(values), None
+        return len(new_values), None, duplicates_skipped
 
     except Exception as e:
-        return 0, str(e)
+        return 0, str(e), 0
 
 
 def list_sheets_in_folder() -> List[Dict]:
