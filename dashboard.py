@@ -305,20 +305,68 @@ def show_bundle_analysis(sheet_id: str):
             min_date = pd.to_datetime(valid_dates.min()).date()
             max_date = pd.to_datetime(valid_dates.max()).date()
 
-            date_range = st.date_input(
-                "기간",
-                value=(min_date, max_date),
-                min_value=min_date,
-                max_value=max_date,
-                key="bundle_range",
+            # Promote any pending range (set by buttons on the previous run)
+            # into the widget key before the widget renders.
+            if '_pending_bundle_range' in st.session_state:
+                st.session_state['bundle_range'] = st.session_state.pop('_pending_bundle_range')
+
+            bundle_df['Year-Month'] = bundle_df['Created Date'].apply(
+                lambda x: x.strftime('%Y-%m') if pd.notna(x) else None
             )
+            available_months = sorted(bundle_df['Year-Month'].dropna().unique(), reverse=True)
+
+            col_month, col_range = st.columns([1, 2])
+            with col_month:
+                month_options = ["전체 기간"] + list(available_months)
+                selected_month = st.selectbox(
+                    "월 선택", options=month_options, index=0, key="bundle_month"
+                )
+
+            if selected_month != "전체 기간":
+                year, month = map(int, selected_month.split('-'))
+                last_day = calendar.monthrange(year, month)[1]
+                default_start = max(pd.Timestamp(year, month, 1).date(), min_date)
+                default_end = min(pd.Timestamp(year, month, last_day).date(), max_date)
+            else:
+                default_start = min_date
+                default_end = max_date
+
+            with col_range:
+                date_range = st.date_input(
+                    "기간",
+                    value=(default_start, default_end),
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="bundle_range",
+                )
+
             if isinstance(date_range, tuple) and len(date_range) == 2:
                 start_date, end_date = date_range
             else:
-                start_date, end_date = min_date, max_date
+                start_date, end_date = default_start, default_end
+
+            st.write("빠른 선택:")
+            q1, q2, q3, q4 = st.columns(4)
+
+            def _queue_bundle_range(start, end):
+                st.session_state['_pending_bundle_range'] = (start, end)
+                st.rerun()
+
+            with q1:
+                if st.button("최근 7일", key="bundle_q7"):
+                    _queue_bundle_range(max_date - datetime.timedelta(days=6), max_date)
+            with q2:
+                if st.button("최근 14일", key="bundle_q14"):
+                    _queue_bundle_range(max_date - datetime.timedelta(days=13), max_date)
+            with q3:
+                if st.button("최근 30일", key="bundle_q30"):
+                    _queue_bundle_range(max_date - datetime.timedelta(days=29), max_date)
+            with q4:
+                if st.button("전체", key="bundle_qall"):
+                    _queue_bundle_range(min_date, max_date)
 
             bundle_df = bundle_df[(bundle_df['Created Date'] >= start_date) & (bundle_df['Created Date'] <= end_date)]
-            st.caption(f"선택된 기간: {start_date} ~ {end_date} ({len(bundle_df):,}건)")
+            st.info(f"📊 선택된 기간: **{start_date}** ~ **{end_date}** ({len(bundle_df):,}건)")
 
         st.markdown("---")
 
