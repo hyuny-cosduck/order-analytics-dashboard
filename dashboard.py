@@ -297,29 +297,7 @@ def show_bundle_analysis(sheet_id: str):
     if 'Created Time' in bundle_df.columns:
         bundle_df['Created Date'] = pd.to_datetime(bundle_df['Created Time'].astype(str).str.strip(), format='%d/%m/%Y %H:%M:%S', errors='coerce').dt.date
 
-    st.info(f"📊 번들 상품 총 {len(bundle_df):,}건 (SKU {bundle_df['Seller SKU'].nunique()}개)")
-    st.markdown("---")
-
-    # ===== KPI Summary =====
-    total_bundle = len(bundle_df)
-    canceled_bundle = len(bundle_df[bundle_df['Order Status'] == 'Canceled'])
-    cancel_rate = canceled_bundle / total_bundle * 100 if total_bundle > 0 else 0
-
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("번들 총 주문", f"{total_bundle:,}건")
-    with col2:
-        st.metric("취소 건수", f"{canceled_bundle:,}건")
-    with col3:
-        st.metric("취소율", f"{cancel_rate:.1f}%")
-    with col4:
-        shipped = len(bundle_df[bundle_df['Order Status'] == 'Shipped'])
-        completed = len(bundle_df[bundle_df['Order Status'] == 'Completed'])
-        st.metric("정상 출고/완료", f"{shipped + completed:,}건")
-
-    st.markdown("---")
-
-    # ===== Date Filter =====
+    # ===== Date Filter (applied before KPIs so metrics respect selection) =====
     if 'Created Date' in bundle_df.columns:
         st.subheader("📅 기간 선택")
         valid_dates = bundle_df['Created Date'].dropna()
@@ -343,6 +321,28 @@ def show_bundle_analysis(sheet_id: str):
             st.caption(f"선택된 기간: {start_date} ~ {end_date} ({len(bundle_df):,}건)")
 
         st.markdown("---")
+
+    st.info(f"📊 번들 상품 총 {len(bundle_df):,}건 (SKU {bundle_df['Seller SKU'].nunique()}개)")
+    st.markdown("---")
+
+    # ===== KPI Summary =====
+    total_bundle = len(bundle_df)
+    canceled_bundle = len(bundle_df[bundle_df['Order Status'] == 'Canceled'])
+    cancel_rate = canceled_bundle / total_bundle * 100 if total_bundle > 0 else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("번들 총 주문", f"{total_bundle:,}건")
+    with col2:
+        st.metric("취소 건수", f"{canceled_bundle:,}건")
+    with col3:
+        st.metric("취소율", f"{cancel_rate:.1f}%")
+    with col4:
+        shipped = len(bundle_df[bundle_df['Order Status'] == 'Shipped'])
+        completed = len(bundle_df[bundle_df['Order Status'] == 'Completed'])
+        st.metric("정상 출고/완료", f"{shipped + completed:,}건")
+
+    st.markdown("---")
 
     # ===== SKU별 분석 =====
     st.subheader("📊 번들 SKU별 취소율")
