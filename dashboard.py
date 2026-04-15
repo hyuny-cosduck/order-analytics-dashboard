@@ -327,11 +327,17 @@ def show_bundle_analysis(sheet_id: str):
             min_date = pd.to_datetime(valid_dates.min()).date()
             max_date = pd.to_datetime(valid_dates.max()).date()
 
-            col_start, col_end = st.columns(2)
-            with col_start:
-                start_date = st.date_input("시작일", value=min_date, min_value=min_date, max_value=max_date, key="bundle_start")
-            with col_end:
-                end_date = st.date_input("종료일", value=max_date, min_value=min_date, max_value=max_date, key="bundle_end")
+            date_range = st.date_input(
+                "기간",
+                value=(min_date, max_date),
+                min_value=min_date,
+                max_value=max_date,
+                key="bundle_range",
+            )
+            if isinstance(date_range, tuple) and len(date_range) == 2:
+                start_date, end_date = date_range
+            else:
+                start_date, end_date = min_date, max_date
 
             bundle_df = bundle_df[(bundle_df['Created Date'] >= start_date) & (bundle_df['Created Date'] <= end_date)]
             st.caption(f"선택된 기간: {start_date} ~ {end_date} ({len(bundle_df):,}건)")
@@ -615,7 +621,7 @@ def show_dashboard_content(sheet_id: str):
     df['Year-Month'] = df['Created Date'].apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
     available_months = sorted(df['Year-Month'].dropna().unique(), reverse=True)
 
-    col_month, col_filter1, col_filter2 = st.columns([1, 1, 1])
+    col_month, col_range = st.columns([1, 2])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
@@ -624,44 +630,48 @@ def show_dashboard_content(sheet_id: str):
     if selected_month != "전체 기간":
         year, month = map(int, selected_month.split('-'))
         last_day = calendar.monthrange(year, month)[1]
-        default_start = pd.Timestamp(year, month, 1).date()
-        default_end = pd.Timestamp(year, month, last_day).date()
-        default_start = max(default_start, min_date)
-        default_end = min(default_end, max_date)
+        default_start = max(pd.Timestamp(year, month, 1).date(), min_date)
+        default_end = min(pd.Timestamp(year, month, last_day).date(), max_date)
+        # Month selection overrides any previous range in session state
+        st.session_state['main_range'] = (default_start, default_end)
     else:
         default_start = min_date
         default_end = max_date
 
-    with col_filter1:
-        start_date = st.date_input("시작일", value=default_start, min_value=min_date, max_value=max_date)
+    with col_range:
+        date_range = st.date_input(
+            "기간",
+            value=(default_start, default_end),
+            min_value=min_date,
+            max_value=max_date,
+            key="main_range",
+        )
 
-    with col_filter2:
-        end_date = st.date_input("종료일", value=default_end, min_value=min_date, max_value=max_date)
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        start_date, end_date = date_range
+    else:
+        start_date, end_date = default_start, default_end
 
     # Quick selection buttons
     st.write("빠른 선택:")
     quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
+    def _set_range(start, end):
+        st.session_state['main_range'] = (start, end)
+        st.rerun()
+
     with quick_col1:
         if st.button("최근 7일"):
-            st.session_state['start_date'] = max_date - pd.Timedelta(days=6)
-            st.session_state['end_date'] = max_date
-            st.rerun()
+            _set_range(max_date - datetime.timedelta(days=6), max_date)
     with quick_col2:
         if st.button("최근 14일"):
-            st.session_state['start_date'] = max_date - pd.Timedelta(days=13)
-            st.session_state['end_date'] = max_date
-            st.rerun()
+            _set_range(max_date - datetime.timedelta(days=13), max_date)
     with quick_col3:
         if st.button("최근 30일"):
-            st.session_state['start_date'] = max_date - pd.Timedelta(days=29)
-            st.session_state['end_date'] = max_date
-            st.rerun()
+            _set_range(max_date - datetime.timedelta(days=29), max_date)
     with quick_col4:
         if st.button("전체"):
-            st.session_state['start_date'] = min_date
-            st.session_state['end_date'] = max_date
-            st.rerun()
+            _set_range(min_date, max_date)
 
     # Apply date filter
     df = df[(df['Created Date'] >= start_date) & (df['Created Date'] <= end_date)]
