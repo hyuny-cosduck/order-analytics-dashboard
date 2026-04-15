@@ -369,37 +369,37 @@ def show_bundle_analysis(sheet_id: str):
         return s.title() if s else str(name)
 
     sku_stats['상품명'] = sku_stats['Product Name'].apply(_short_name)
-    # Disambiguate duplicates by appending SKU suffix
-    dup_mask = sku_stats['상품명'].duplicated(keep=False)
-    sku_stats.loc[dup_mask, '상품명'] = sku_stats.loc[dup_mask, '상품명'] + ' (' + sku_stats.loc[dup_mask, 'SKU'].str[-2:] + ')'
+    # Numbered labels (#1, #2, ...) by order volume for compact x-axis
+    sku_stats = sku_stats.reset_index(drop=True)
+    sku_stats['번호'] = ['#' + str(i + 1) for i in range(len(sku_stats))]
 
     col1, col2 = st.columns(2)
 
     with col1:
         fig_sku = px.bar(
-            sku_stats, x='상품명', y=['전체건수', '취소건수'],
+            sku_stats, x='번호', y=['전체건수', '취소건수'],
             title='번들 상품별 주문/취소 현황',
             barmode='group',
             color_discrete_map={'전체건수': '#4CAF50', '취소건수': '#f44336'},
-            hover_data={'Product Name': True, 'SKU': True, '상품명': False},
+            hover_data={'상품명': True, 'Product Name': True, 'SKU': True, '번호': False},
         )
-        fig_sku.update_layout(xaxis_tickangle=-45, xaxis_title='상품명')
+        fig_sku.update_layout(xaxis_title='번들 번호', xaxis={'categoryorder': 'array', 'categoryarray': sku_stats['번호'].tolist()})
         st.plotly_chart(fig_sku, use_container_width=True)
 
     with col2:
         fig_cancel = px.bar(
-            sku_stats, x='상품명', y='취소율(%)',
+            sku_stats, x='번호', y='취소율(%)',
             title='번들 상품별 취소율',
             color='취소율(%)', color_continuous_scale='RdYlGn_r',
-            hover_data={'Product Name': True, 'SKU': True, '상품명': False},
+            hover_data={'상품명': True, 'Product Name': True, 'SKU': True, '번호': False},
         )
-        fig_cancel.update_layout(xaxis_tickangle=-45, xaxis_title='상품명')
+        fig_cancel.update_layout(xaxis_title='번들 번호', xaxis={'categoryorder': 'array', 'categoryarray': sku_stats['번호'].tolist()})
         st.plotly_chart(fig_cancel, use_container_width=True)
 
-    with st.expander("📋 SKU별 상세 데이터"):
-        display_df = sku_stats[['SKU', 'Product Name', '단가', '전체건수', '취소건수', '취소율(%)']].copy()
+    with st.expander("📋 번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
+        display_df = sku_stats[['번호', '상품명', 'Product Name', 'SKU', '단가', '전체건수', '취소건수', '취소율(%)']].copy()
         display_df['단가'] = display_df['단가'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) and x > 0 else "-")
-        st.dataframe(display_df, use_container_width=True)
+        st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.markdown("---")
 
