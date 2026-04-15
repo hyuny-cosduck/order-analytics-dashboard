@@ -397,7 +397,7 @@ def show_bundle_analysis(sheet_id: str):
         st.plotly_chart(fig_cancel, use_container_width=True)
 
     with st.expander("📋 번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
-        display_df = sku_stats[['번호', '상품명', 'Product Name', 'SKU', '단가', '전체건수', '취소건수', '취소율(%)']].copy()
+        display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체건수', '취소건수', '취소율(%)']].copy()
         display_df['단가'] = display_df['단가'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) and x > 0 else "-")
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
@@ -863,7 +863,7 @@ def show_dashboard_content(sheet_id: str):
         map_col1, map_col2 = st.columns(2)
         with map_col1:
             st.caption("📋 상위 10개 제품 매칭")
-            map_cols_top = ['번호', 'Product Name Short', 'Product Name', '전체수량', '정상수량', '취소수량', '취소율(%)']
+            map_cols_top = ['번호', 'Product Name', '전체수량', '정상수량', '취소수량', '취소율(%)']
             st.dataframe(top_sku[[c for c in map_cols_top if c in top_sku.columns]], use_container_width=True, hide_index=True)
         with map_col2:
             st.caption("📋 취소율 상위 10개 제품 매칭")
