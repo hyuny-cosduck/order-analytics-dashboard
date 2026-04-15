@@ -243,14 +243,268 @@ def show_brand_dashboard():
 
     st.markdown("---")
 
-    # Tabs: Dashboard and Upload
-    tab1, tab2 = st.tabs(["📈 Dashboard", "📤 Upload Data"])
+    # Tabs: Dashboard, Bundle Analysis, and Upload
+    tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
 
     with tab1:
         show_dashboard_content(sheet_id)
 
     with tab2:
+        show_bundle_analysis(sheet_id)
+
+    with tab3:
         show_upload_section(sheet_id, brand_name)
+
+
+def show_bundle_analysis(sheet_id: str):
+    """번들 SKU별 구매/취소 분석"""
+    st.subheader("📦 번들 SKU 분석")
+    st.caption("BDL_BEPLAIN 번들 상품의 구매/취소 현황을 분석합니다.")
+
+    # Load data
+    @st.cache_data(ttl=300)
+    def load_data(sid):
+        return sheets_manager.read_sheet_data(sid)
+
+    with st.spinner("데이터를 불러오는 중..."):
+        df, error = load_data(sheet_id)
+
+    if error:
+        st.error(f"데이터 로드 실패: {error}")
+        st.stop()
+
+    if df is None or len(df) == 0:
+        st.warning("데이터가 없습니다. Upload 탭에서 데이터를 업로드해주세요.")
+        st.stop()
+
+    # Filter bundle SKUs
+    if 'Seller SKU' not in df.columns:
+        st.error("'Seller SKU' 컬럼이 없습니다.")
+        st.stop()
+
+    bundle_df = df[df['Seller SKU'].str.contains('BDL_BEPLAIN', na=False)].copy()
+
+    if len(bundle_df) == 0:
+        st.info("번들 상품 데이터가 없습니다. (BDL_BEPLAIN으로 시작하는 SKU)")
+        st.stop()
+
+    # Data preprocessing
+    bundle_df['SKU Unit Original Price'] = pd.to_numeric(bundle_df['SKU Unit Original Price'], errors='coerce')
+    bundle_df['Order Amount'] = pd.to_numeric(bundle_df['Order Amount'], errors='coerce')
+    bundle_df['Quantity'] = pd.to_numeric(bundle_df['Quantity'], errors='coerce')
+
+    if 'Created Time' in bundle_df.columns:
+        bundle_df['Created Date'] = pd.to_datetime(bundle_df['Created Time'].astype(str).str.strip(), format='%d/%m/%Y %H:%M:%S', errors='coerce').dt.date
+
+    st.info(f"📊 번들 상품 총 {len(bundle_df):,}건 (SKU {bundle_df['Seller SKU'].nunique()}개)")
+    st.markdown("---")
+
+    # ===== KPI Summary =====
+    total_bundle = len(bundle_df)
+    canceled_bundle = len(bundle_df[bundle_df['Order Status'] == 'Canceled'])
+    cancel_rate = canceled_bundle / total_bundle * 100 if total_bundle > 0 else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("번들 총 주문", f"{total_bundle:,}건")
+    with col2:
+        st.metric("취소 건수", f"{canceled_bundle:,}건")
+    with col3:
+        st.metric("취소율", f"{cancel_rate:.1f}%")
+    with col4:
+        shipped = len(bundle_df[bundle_df['Order Status'] == 'Shipped'])
+        completed = len(bundle_df[bundle_df['Order Status'] == 'Completed'])
+        st.metric("정상 출고/완료", f"{shipped + completed:,}건")
+
+    st.markdown("---")
+
+    # ===== Date Filter =====
+    if 'Created Date' in bundle_df.columns:
+        st.subheader("📅 기간 선택")
+        valid_dates = bundle_df['Created Date'].dropna()
+        if len(valid_dates) > 0:
+            min_date = pd.to_datetime(valid_dates.min()).date()
+            max_date = pd.to_datetime(valid_dates.max()).date()
+
+            col_start, col_end = st.columns(2)
+            with col_start:
+                start_date = st.date_input("시작일", value=min_date, min_value=min_date, max_value=max_date, key="bundle_start")
+            with col_end:
+                end_date = st.date_input("종료일", value=max_date, min_value=min_date, max_value=max_date, key="bundle_end")
+
+            bundle_df = bundle_df[(bundle_df['Created Date'] >= start_date) & (bundle_df['Created Date'] <= end_date)]
+            st.caption(f"선택된 기간: {start_date} ~ {end_date} ({len(bundle_df):,}건)")
+
+        st.markdown("---")
+
+    # ===== SKU별 분석 =====
+    st.subheader("📊 번들 SKU별 취소율")
+
+    sku_stats = bundle_df.groupby('Seller SKU').agg({
+        'SKU Unit Original Price': 'first',
+        'Product Name': 'first',
+        'Order ID': 'count',
+        'Order Status': lambda x: (x == 'Canceled').sum()
+    }).reset_index()
+    sku_stats.columns = ['SKU', '단가', 'Product Name', '전체건수', '취소건수']
+    sku_stats['취소율(%)'] = (sku_stats['취소건수'] / sku_stats['전체건수'] * 100).round(1)
+    sku_stats = sku_stats.sort_values('전체건수', ascending=False)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fig_sku = px.bar(
+            sku_stats, x='SKU', y=['전체건수', '취소건수'],
+            title='번들 SKU별 주문/취소 현황',
+            barmode='group',
+            color_discrete_map={'전체건수': '#4CAF50', '취소건수': '#f44336'}
+        )
+        fig_sku.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig_sku, use_container_width=True)
+
+    with col2:
+        fig_cancel = px.bar(
+            sku_stats, x='SKU', y='취소율(%)',
+            title='번들 SKU별 취소율',
+            color='취소율(%)', color_continuous_scale='RdYlGn_r'
+        )
+        fig_cancel.update_layout(xaxis_tickangle=-45)
+        st.plotly_chart(fig_cancel, use_container_width=True)
+
+    with st.expander("📋 SKU별 상세 데이터"):
+        display_df = sku_stats[['SKU', 'Product Name', '단가', '전체건수', '취소건수', '취소율(%)']].copy()
+        display_df['단가'] = display_df['단가'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) and x > 0 else "-")
+        st.dataframe(display_df, use_container_width=True)
+
+    st.markdown("---")
+
+    # ===== 가격대별 분석 =====
+    st.subheader("💰 가격대별 취소율")
+
+    bundle_df['Price Range'] = pd.cut(
+        bundle_df['SKU Unit Original Price'],
+        bins=[0, 500000, 800000, 1200000, 1600000, float('inf')],
+        labels=['~500K', '500K~800K', '800K~1.2M', '1.2M~1.6M', '1.6M+']
+    )
+
+    price_stats = bundle_df.groupby('Price Range', observed=True).agg({
+        'Order ID': 'count',
+        'Order Status': lambda x: (x == 'Canceled').sum()
+    }).reset_index()
+    price_stats.columns = ['가격대', '전체건수', '취소건수']
+    price_stats['취소율(%)'] = (price_stats['취소건수'] / price_stats['전체건수'] * 100).round(1)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fig_price = px.bar(
+            price_stats, x='가격대', y='전체건수',
+            title='가격대별 주문 분포',
+            color='취소율(%)', color_continuous_scale='RdYlGn_r',
+            text='전체건수'
+        )
+        fig_price.update_traces(textposition='outside')
+        st.plotly_chart(fig_price, use_container_width=True)
+
+    with col2:
+        fig_price_cancel = px.bar(
+            price_stats, x='가격대', y='취소율(%)',
+            title='가격대별 취소율',
+            color='취소율(%)', color_continuous_scale='RdYlGn_r',
+            text='취소율(%)'
+        )
+        fig_price_cancel.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        st.plotly_chart(fig_price_cancel, use_container_width=True)
+
+    st.markdown("---")
+
+    # ===== 번들 특성별 분석 =====
+    st.subheader("🏷️ 번들 특성별 분석")
+
+    # 번들 특성 분류 (Product Name 기반)
+    def classify_bundle(name):
+        name_lower = str(name).lower()
+        if 'twinpack' in name_lower:
+            return 'TWINPACK'
+        elif 'duo' in name_lower:
+            return 'DUO'
+        elif 'trio' in name_lower:
+            return 'TRIO'
+        elif 'set' in name_lower:
+            return 'SET'
+        else:
+            return 'OTHER'
+
+    bundle_df['Bundle Type'] = bundle_df['Product Name'].apply(classify_bundle)
+
+    type_stats = bundle_df.groupby('Bundle Type').agg({
+        'Order ID': 'count',
+        'Order Status': lambda x: (x == 'Canceled').sum(),
+        'SKU Unit Original Price': 'mean'
+    }).reset_index()
+    type_stats.columns = ['번들유형', '전체건수', '취소건수', '평균가격']
+    type_stats['취소율(%)'] = (type_stats['취소건수'] / type_stats['전체건수'] * 100).round(1)
+    type_stats = type_stats.sort_values('전체건수', ascending=False)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fig_type = px.pie(
+            type_stats, values='전체건수', names='번들유형',
+            title='번들 유형별 주문 분포',
+            hole=0.4
+        )
+        fig_type.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_type, use_container_width=True)
+
+    with col2:
+        fig_type_cancel = px.bar(
+            type_stats, x='번들유형', y='취소율(%)',
+            title='번들 유형별 취소율',
+            color='취소율(%)', color_continuous_scale='RdYlGn_r',
+            text='취소율(%)'
+        )
+        fig_type_cancel.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        st.plotly_chart(fig_type_cancel, use_container_width=True)
+
+    with st.expander("📋 번들 유형별 상세 데이터"):
+        type_display = type_stats.copy()
+        type_display['평균가격'] = type_display['평균가격'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) else "-")
+        st.dataframe(type_display, use_container_width=True)
+
+    st.markdown("---")
+
+    # ===== 날짜별 추이 =====
+    if 'Created Date' in bundle_df.columns:
+        st.subheader("📅 날짜별 번들 취소율 추이")
+
+        daily_stats = bundle_df.groupby('Created Date').agg({
+            'Order ID': 'count',
+            'Order Status': lambda x: (x == 'Canceled').sum()
+        }).reset_index()
+        daily_stats.columns = ['Date', '전체건수', '취소건수']
+        daily_stats['취소율(%)'] = (daily_stats['취소건수'] / daily_stats['전체건수'] * 100).round(1)
+
+        fig_daily = make_subplots(specs=[[{"secondary_y": True}]])
+        fig_daily.add_trace(
+            go.Bar(name='전체 주문', x=daily_stats['Date'], y=daily_stats['전체건수'],
+                   marker_color='#4CAF50', opacity=0.7), secondary_y=False
+        )
+        fig_daily.add_trace(
+            go.Bar(name='취소', x=daily_stats['Date'], y=daily_stats['취소건수'],
+                   marker_color='#f44336', opacity=0.7), secondary_y=False
+        )
+        fig_daily.add_trace(
+            go.Scatter(name='취소율(%)', x=daily_stats['Date'], y=daily_stats['취소율(%)'],
+                       mode='lines+markers', line=dict(color='#FF9800', width=2)), secondary_y=True
+        )
+        fig_daily.update_layout(barmode='overlay', height=400, title='날짜별 번들 주문/취소 추이')
+        fig_daily.update_yaxes(title_text="주문 수", secondary_y=False)
+        fig_daily.update_yaxes(title_text="취소율 (%)", secondary_y=True)
+        st.plotly_chart(fig_daily, use_container_width=True)
+
+        with st.expander("📋 날짜별 상세 데이터"):
+            st.dataframe(daily_stats, use_container_width=True)
 
 
 def show_upload_section(sheet_id: str, brand_name: str):
@@ -340,7 +594,7 @@ def show_dashboard_content(sheet_id: str):
 
     # Date conversion
     if 'Created Time' in df.columns:
-        df['Created Date'] = pd.to_datetime(df['Created Time'], format='%d/%m/%Y %H:%M:%S', errors='coerce').dt.date
+        df['Created Date'] = pd.to_datetime(df['Created Time'].astype(str).str.strip(), format='%d/%m/%Y %H:%M:%S', errors='coerce').dt.date
 
     with col_info:
         st.caption(f"전체 데이터: {len(df):,}행")
