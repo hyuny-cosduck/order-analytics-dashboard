@@ -820,9 +820,18 @@ def show_dashboard_content(sheet_id: str):
         sku_summary['취소율(%)'] = (sku_summary['취소수량'] / sku_summary['전체수량'] * 100).round(1)
         sku_summary = sku_summary.sort_values('전체수량', ascending=False)
 
-        sku_summary['Product Name Short'] = sku_summary.get('Product Name', sku_summary['Seller SKU']).apply(
-            lambda x: x[:30] + '...' if isinstance(x, str) and len(x) > 30 else x
-        )
+        import re
+        def _strip_brand(name):
+            s = str(name) if name is not None else ''
+            s = re.sub(r'\[[^\]]*\]\s*', '', s)
+            s = re.sub(r'\([^)]*NOT\s*FOR\s*SALE[^)]*\)\s*', '', s, flags=re.IGNORECASE)
+            s = re.sub(r'^\s*BEPLAIN(\s+MUNG\s+BEAN)?\s*', '', s, flags=re.IGNORECASE)
+            s = re.sub(r'\s*\|.*$', '', s)
+            s = re.sub(r'\s+', ' ', s).strip()
+            return s if s else str(name)
+
+        src = sku_summary['Product Name'] if 'Product Name' in sku_summary.columns else sku_summary['Seller SKU']
+        sku_summary['Product Name Short'] = src.apply(lambda x: _strip_brand(x)[:40] + ('...' if isinstance(_strip_brand(x), str) and len(_strip_brand(x)) > 40 else ''))
 
         col1, col2 = st.columns(2)
 
@@ -831,9 +840,10 @@ def show_dashboard_content(sheet_id: str):
             fig_sku = px.bar(
                 top_sku, x='Product Name Short', y=['정상수량', '취소수량'], barmode='stack',
                 title='상위 10개 제품 판매 현황',
-                color_discrete_map={'정상수량': '#4CAF50', '취소수량': '#f44336'}
+                color_discrete_map={'정상수량': '#4CAF50', '취소수량': '#f44336'},
+                hover_data={'Product Name': True, 'Product Name Short': False} if 'Product Name' in top_sku.columns else None,
             )
-            fig_sku.update_layout(xaxis_tickangle=-45)
+            fig_sku.update_layout(xaxis_tickangle=-45, xaxis_title='제품명')
             st.plotly_chart(fig_sku, use_container_width=True)
 
         with col2:
@@ -841,9 +851,10 @@ def show_dashboard_content(sheet_id: str):
             fig_cancel_sku = px.bar(
                 high_cancel_sku, x='Product Name Short', y='취소율(%)',
                 title='취소율 상위 10개 제품 (최소 10개 이상 주문)',
-                color='취소율(%)', color_continuous_scale='Reds'
+                color='취소율(%)', color_continuous_scale='Reds',
+                hover_data={'Product Name': True, 'Product Name Short': False} if 'Product Name' in high_cancel_sku.columns else None,
             )
-            fig_cancel_sku.update_layout(xaxis_tickangle=-45)
+            fig_cancel_sku.update_layout(xaxis_tickangle=-45, xaxis_title='제품명')
             st.plotly_chart(fig_cancel_sku, use_container_width=True)
 
         with st.expander("📋 제품별 상세 데이터"):
