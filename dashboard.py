@@ -17,6 +17,12 @@ st.set_page_config(
     layout="wide"
 )
 
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_sheet_data(sheet_id: str):
+    """Shared cached loader — both Dashboard and Bundle Analysis tabs reuse one cache entry."""
+    return sheets_manager.read_sheet_data(sheet_id)
+
 # ===== Session State Initialization =====
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -261,13 +267,8 @@ def show_bundle_analysis(sheet_id: str):
     st.subheader("📦 번들 SKU 분석")
     st.caption("BDL_BEPLAIN 번들 상품의 구매/취소 현황을 분석합니다.")
 
-    # Load data
-    @st.cache_data(ttl=300)
-    def load_data(sid):
-        return sheets_manager.read_sheet_data(sid)
-
     with st.spinner("데이터를 불러오는 중..."):
-        df, error = load_data(sheet_id)
+        df, error = load_sheet_data(sheet_id)
 
     if error:
         st.error(f"데이터 로드 실패: {error}")
@@ -560,11 +561,6 @@ def show_upload_section(sheet_id: str, brand_name: str):
 
 
 def show_dashboard_content(sheet_id: str):
-    # Load data
-    @st.cache_data(ttl=300)
-    def load_data(sid):
-        return sheets_manager.read_sheet_data(sid)
-
     # Refresh button
     col_refresh, col_info = st.columns([1, 4])
     with col_refresh:
@@ -573,7 +569,7 @@ def show_dashboard_content(sheet_id: str):
             st.rerun()
 
     with st.spinner("데이터를 불러오는 중..."):
-        df, error = load_data(sheet_id)
+        df, error = load_sheet_data(sheet_id)
 
     if error:
         st.error(f"데이터 로드 실패: {error}")
