@@ -842,7 +842,7 @@ def show_dashboard_content(sheet_id: str):
                 top_sku, x='번호', y=['정상수량', '취소수량'], barmode='stack',
                 title='상위 10개 제품 판매 현황 (전체 판매량 기준)',
                 color_discrete_map={'정상수량': '#4CAF50', '취소수량': '#f44336'},
-                hover_data={'Product Name Short': True, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in top_sku.columns else {'Product Name Short': True, '번호': False},
+                hover_data={'Product Name Short': False, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in top_sku.columns else {'Product Name Short': False, '번호': False},
             )
             fig_sku.update_layout(xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': top_sku['번호'].tolist()})
             st.plotly_chart(fig_sku, use_container_width=True)
@@ -854,7 +854,7 @@ def show_dashboard_content(sheet_id: str):
                 high_cancel_sku, x='번호', y='취소율(%)',
                 title='취소율 상위 10개 제품 (최소 10개 이상 주문)',
                 color='취소율(%)', color_continuous_scale='Reds',
-                hover_data={'Product Name Short': True, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in high_cancel_sku.columns else {'Product Name Short': True, '번호': False},
+                hover_data={'Product Name Short': False, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in high_cancel_sku.columns else {'Product Name Short': False, '번호': False},
             )
             fig_cancel_sku.update_layout(xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': high_cancel_sku['번호'].tolist()})
             st.plotly_chart(fig_cancel_sku, use_container_width=True)
