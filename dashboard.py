@@ -361,21 +361,23 @@ def show_bundle_analysis(sheet_id: str):
 
     with col1:
         fig_sku = px.bar(
-            sku_stats, x='SKU', y=['전체건수', '취소건수'],
-            title='번들 SKU별 주문/취소 현황',
+            sku_stats, x='Product Name', y=['전체건수', '취소건수'],
+            title='번들 상품별 주문/취소 현황',
             barmode='group',
-            color_discrete_map={'전체건수': '#4CAF50', '취소건수': '#f44336'}
+            color_discrete_map={'전체건수': '#4CAF50', '취소건수': '#f44336'},
+            hover_data=['SKU'],
         )
-        fig_sku.update_layout(xaxis_tickangle=-45)
+        fig_sku.update_layout(xaxis_tickangle=-45, xaxis_title='상품명')
         st.plotly_chart(fig_sku, use_container_width=True)
 
     with col2:
         fig_cancel = px.bar(
-            sku_stats, x='SKU', y='취소율(%)',
-            title='번들 SKU별 취소율',
-            color='취소율(%)', color_continuous_scale='RdYlGn_r'
+            sku_stats, x='Product Name', y='취소율(%)',
+            title='번들 상품별 취소율',
+            color='취소율(%)', color_continuous_scale='RdYlGn_r',
+            hover_data=['SKU'],
         )
-        fig_cancel.update_layout(xaxis_tickangle=-45)
+        fig_cancel.update_layout(xaxis_tickangle=-45, xaxis_title='상품명')
         st.plotly_chart(fig_cancel, use_container_width=True)
 
     with st.expander("📋 SKU별 상세 데이터"):
