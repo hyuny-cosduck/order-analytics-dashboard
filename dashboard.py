@@ -639,6 +639,12 @@ def show_dashboard_content(sheet_id: str):
     df['Year-Month'] = df['Created Date'].apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
     available_months = sorted(df['Year-Month'].dropna().unique(), reverse=True)
 
+    # Promote any pending range (set by buttons on the previous run) into the
+    # widget key BEFORE the widget is instantiated — Streamlit disallows
+    # mutating a widget-bound key after its widget has already rendered.
+    if '_pending_main_range' in st.session_state:
+        st.session_state['main_range'] = st.session_state.pop('_pending_main_range')
+
     col_month, col_range = st.columns([1, 2])
 
     with col_month:
@@ -650,8 +656,6 @@ def show_dashboard_content(sheet_id: str):
         last_day = calendar.monthrange(year, month)[1]
         default_start = max(pd.Timestamp(year, month, 1).date(), min_date)
         default_end = min(pd.Timestamp(year, month, last_day).date(), max_date)
-        # Month selection overrides any previous range in session state
-        st.session_state['main_range'] = (default_start, default_end)
     else:
         default_start = min_date
         default_end = max_date
@@ -670,26 +674,26 @@ def show_dashboard_content(sheet_id: str):
     else:
         start_date, end_date = default_start, default_end
 
-    # Quick selection buttons
+    # Quick selection buttons — stash into a pending key, then rerun.
     st.write("빠른 선택:")
     quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
-    def _set_range(start, end):
-        st.session_state['main_range'] = (start, end)
+    def _queue_range(start, end):
+        st.session_state['_pending_main_range'] = (start, end)
         st.rerun()
 
     with quick_col1:
         if st.button("최근 7일"):
-            _set_range(max_date - datetime.timedelta(days=6), max_date)
+            _queue_range(max_date - datetime.timedelta(days=6), max_date)
     with quick_col2:
         if st.button("최근 14일"):
-            _set_range(max_date - datetime.timedelta(days=13), max_date)
+            _queue_range(max_date - datetime.timedelta(days=13), max_date)
     with quick_col3:
         if st.button("최근 30일"):
-            _set_range(max_date - datetime.timedelta(days=29), max_date)
+            _queue_range(max_date - datetime.timedelta(days=29), max_date)
     with quick_col4:
         if st.button("전체"):
-            _set_range(min_date, max_date)
+            _queue_range(min_date, max_date)
 
     # Apply date filter
     df = df[(df['Created Date'] >= start_date) & (df['Created Date'] <= end_date)]
