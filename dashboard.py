@@ -357,25 +357,41 @@ def show_bundle_analysis(sheet_id: str):
     sku_stats['취소율(%)'] = (sku_stats['취소건수'] / sku_stats['전체건수'] * 100).round(1)
     sku_stats = sku_stats.sort_values('전체건수', ascending=False)
 
+    # Build a short display name: strip BEPLAIN / MUNG BEAN prefix, volume specs,
+    # and anything after a pipe/comma, then title-case.
+    import re
+    def _short_name(name: str) -> str:
+        s = str(name)
+        s = re.split(r'\s*[\|,]\s*', s, maxsplit=1)[0]
+        s = re.sub(r'^\s*BEPLAIN(\s+MUNG\s+BEAN)?\s*', '', s, flags=re.IGNORECASE)
+        s = re.sub(r'\s*\d+\s*ml(\s*\*\s*\d+)?', '', s, flags=re.IGNORECASE)
+        s = re.sub(r'\s+', ' ', s).strip()
+        return s.title() if s else str(name)
+
+    sku_stats['상품명'] = sku_stats['Product Name'].apply(_short_name)
+    # Disambiguate duplicates by appending SKU suffix
+    dup_mask = sku_stats['상품명'].duplicated(keep=False)
+    sku_stats.loc[dup_mask, '상품명'] = sku_stats.loc[dup_mask, '상품명'] + ' (' + sku_stats.loc[dup_mask, 'SKU'].str[-2:] + ')'
+
     col1, col2 = st.columns(2)
 
     with col1:
         fig_sku = px.bar(
-            sku_stats, x='Product Name', y=['전체건수', '취소건수'],
+            sku_stats, x='상품명', y=['전체건수', '취소건수'],
             title='번들 상품별 주문/취소 현황',
             barmode='group',
             color_discrete_map={'전체건수': '#4CAF50', '취소건수': '#f44336'},
-            hover_data=['SKU'],
+            hover_data={'Product Name': True, 'SKU': True, '상품명': False},
         )
         fig_sku.update_layout(xaxis_tickangle=-45, xaxis_title='상품명')
         st.plotly_chart(fig_sku, use_container_width=True)
 
     with col2:
         fig_cancel = px.bar(
-            sku_stats, x='Product Name', y='취소율(%)',
+            sku_stats, x='상품명', y='취소율(%)',
             title='번들 상품별 취소율',
             color='취소율(%)', color_continuous_scale='RdYlGn_r',
-            hover_data=['SKU'],
+            hover_data={'Product Name': True, 'SKU': True, '상품명': False},
         )
         fig_cancel.update_layout(xaxis_tickangle=-45, xaxis_title='상품명')
         st.plotly_chart(fig_cancel, use_container_width=True)
