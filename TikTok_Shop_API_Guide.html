@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Shop Seller API 신청 가이드</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background: #fff;
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        @media print {
+            body {
+                padding: 20px;
+                font-size: 11pt;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fe2c55;
+            text-align: center;
+            margin-bottom: 10px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #fe2c55;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+
+        h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8ea 100%);
+            border-left: 4px solid #fe2c55;
+            border-radius: 0 8px 8px 0;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-top: 25px;
+            margin-bottom: 12px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #fe2c55;
+            color: white;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        tr:hover {
+            background: #fff5f5;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box::before {
+            content: "⚠️ ";
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border: 1px solid #2196f3;
+            border-left: 4px solid #2196f3;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info-box::before {
+            content: "💡 ";
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-left: 4px solid #4caf50;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .code-box {
+            background: #1a1a2e;
+            color: #eee;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 13px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .checklist {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fe2c55;
+            border-radius: 4px;
+            margin-right: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: #fe2c55;
+            color: white;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .step {
+            margin-bottom: 20px;
+            padding-left: 10px;
+        }
+
+        ol, ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .toc {
+            background: #f8f9fa;
+            padding: 25px 30px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #fe2c55;
+        }
+
+        .toc ol {
+            columns: 2;
+            column-gap: 40px;
+        }
+
+        .toc li {
+            margin-bottom: 6px;
+        }
+
+        a {
+            color: #fe2c55;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-required {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .badge-optional {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .badge-recommended {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #fe2c55;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -24px;
+            top: 20px;
+            width: 10px;
+            height: 10px;
+            background: #fe2c55;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>TikTok Shop Seller API<br>신청 가이드</h1>
+    <p class="subtitle">주문, 상품, 캠페인 데이터 자동 연동을 위한 API 신청 절차 안내</p>
+
+    <div class="toc">
+        <h3>목차</h3>
+        <ol>
+            <li>사전 준비사항</li>
+            <li>Partner Center 등록</li>
+            <li>앱 생성</li>
+            <li>API 자격증명 획득</li>
+            <li>API 권한 신청</li>
+            <li>개발팀 전달 정보</li>
+            <li>예상 소요 시간</li>
+            <li>참고 자료</li>
+        </ol>
+    </div>
+
+    <!-- Section 1 -->
+    <h2>1. 사전 준비사항</h2>
+    <p>API 신청 전 다음 항목을 준비해 주세요:</p>
+
+    <table>
+        <tr>
+            <th style="width: 35%">항목</th>
+            <th>설명</th>
+        </tr>
+        <tr>
+            <td><strong>TikTok Shop Seller Center 계정</strong></td>
+            <td>활성화된 셀러 계정 필요</td>
+        </tr>
+        <tr>
+            <td><strong>사업자 등록증</strong></td>
+            <td>법인 또는 개인사업자</td>
+        </tr>
+        <tr>
+            <td><strong>담당자 신분증</strong></td>
+            <td>여권 또는 주민등록증</td>
+        </tr>
+        <tr>
+            <td><strong>개인정보처리방침 URL</strong></td>
+            <td>웹사이트에 게시된 개인정보처리방침</td>
+        </tr>
+    </table>
+
+    <!-- Section 2 -->
+    <h2>2. Partner Center 등록</h2>
+
+    <h3>2-1. Partner Portal 접속</h3>
+    <table>
+        <tr>
+            <th>대상 마켓</th>
+            <th>URL</th>
+        </tr>
+        <tr>
+            <td><strong>글로벌 (인도네시아 포함)</strong> <span class="badge badge-recommended">권장</span></td>
+            <td>https://partner.tiktokshop.com</td>
+        </tr>
+        <tr>
+            <td>미국 전용</td>
+            <td>https://partner.us.tiktokshop.com</td>
+        </tr>
+    </table>
+
+    <div class="info-box">
+        <strong>인도네시아 마켓 대상이면 Global Partner Portal을 선택하세요.</strong>
+    </div>
+
+    <h3>2-2. 등록 절차</h3>
+
+    <div class="step">
+        <p><span class="step-number">1</span><strong>"Get Started" 버튼 클릭</strong></p>
+    </div>
+
+    <div class="step">
+        <p><span class="step-number">2</span><strong>Business Region 선택</strong></p>
+        <p style="margin-left: 38px;">사업체가 등록된 국가 선택</p>
+        <div class="warning-box">
+            <strong>주의:</strong> 한 번 설정하면 변경 불가능합니다! 신중하게 선택하세요.
+        </div>
+    </div>
+
+    <div class="step">
+        <p><span class="step-number">3</span><strong>Target Market 선택</strong></p>
+        <p style="margin-left: 38px;"><code>Indonesia</code> 선택</p>
+    </div>
+
+    <div class="step">
+        <p><span class="step-number">4</span><strong>Business Category 선택</strong></p>
+        <p style="margin-left: 38px;"><code>Seller in-house developer</code> 선택 (자사 스토어 데이터 연동 목적)</p>
+    </div>
+
+    <div class="step">
+        <p><span class="step-number">5</span><strong>이메일 인증</strong></p>
+        <p style="margin-left: 38px;">TikTok Shop 관리자 이메일로 인증 코드 수신 후 입력</p>
+    </div>
+
+    <div class="step">
+        <p><span class="step-number">6</span><strong>서류 제출</strong></p>
+        <ul style="margin-left: 38px;">
+            <li>사업자 등록증 업로드</li>
+            <li>담당자 신분증 업로드</li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <p><span class="step-number">7</span><strong>제출 및 승인 대기</strong></p>
+        <p style="margin-left: 38px;">약 <strong>2-3 영업일</strong> 소요</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Section 3 -->
+    <h2>3. 앱 생성</h2>
+
+    <h3>3-1. 앱 생성 메뉴 접속</h3>
+    <ol>
+        <li>Partner Center 로그인</li>
+        <li>좌측 메뉴에서 <strong>"App & Service"</strong> 클릭</li>
+        <li><strong>"Create app & service"</strong> 버튼 클릭</li>
+    </ol>
+
+    <h3>3-2. 앱 유형 선택</h3>
+    <table>
+        <tr>
+            <th>유형</th>
+            <th>설명</th>
+            <th style="width: 100px;">권장</th>
+        </tr>
+        <tr>
+            <td><strong>Custom App</strong></td>
+            <td>자사 스토어 전용 앱</td>
+            <td><span class="badge badge-recommended">권장</span></td>
+        </tr>
+        <tr>
+            <td>Public App</td>
+            <td>TikTok Shop 앱스토어에 공개</td>
+            <td>-</td>
+        </tr>
+    </table>
+
+    <div class="info-box">
+        <strong>Custom App</strong>을 선택하세요. 자사 데이터 연동 목적에 적합합니다.
+    </div>
+
+    <h3>3-3. 앱 정보 입력</h3>
+    <table>
+        <tr>
+            <th style="width: 30%">항목</th>
+            <th>입력 예시</th>
+        </tr>
+        <tr>
+            <td><strong>App Name</strong></td>
+            <td>[브랜드명] Data Integration</td>
+        </tr>
+        <tr>
+            <td><strong>Category</strong></td>
+            <td>E-commerce 또는 Analytics</td>
+        </tr>
+        <tr>
+            <td><strong>Logo</strong></td>
+            <td>브랜드 로고 이미지 (PNG, 512x512px 권장)</td>
+        </tr>
+        <tr>
+            <td><strong>Target Market</strong></td>
+            <td>Indonesia</td>
+        </tr>
+        <tr>
+            <td><strong>Redirect URL</strong></td>
+            <td>개발팀에서 제공 예정</td>
+        </tr>
+        <tr>
+            <td><strong>Webhook URL</strong></td>
+            <td>개발팀에서 제공 예정 (선택사항)</td>
+        </tr>
+    </table>
+
+    <h3>3-4. 앱 생성 완료</h3>
+    <p><strong>"Submit"</strong> 버튼을 클릭하면 앱이 즉시 생성됩니다.</p>
+
+    <!-- Section 4 -->
+    <h2>4. API 자격증명 획득</h2>
+    <p>앱 생성이 완료되면 앱 상세 페이지에서 다음 정보를 확인할 수 있습니다:</p>
+
+    <div class="code-box">
+        <strong>App Key:</strong>     7abc1234567890def1234567890abc<br><br>
+        <strong>App Secret:</strong>  9xyz9876543210fed0987654321xyz<br><br>
+        <strong>Service ID:</strong>  1234567
+    </div>
+
+    <h3>보안 주의사항</h3>
+    <table>
+        <tr>
+            <th>항목</th>
+            <th>공개 가능</th>
+            <th>비고</th>
+        </tr>
+        <tr>
+            <td>App Key</td>
+            <td style="color: #2e7d32;">O</td>
+            <td>클라이언트 식별용</td>
+        </tr>
+        <tr>
+            <td><strong>App Secret</strong></td>
+            <td style="color: #c62828;"><strong>X</strong></td>
+            <td><strong>절대 외부 노출 금지</strong></td>
+        </tr>
+        <tr>
+            <td>Service ID</td>
+            <td style="color: #2e7d32;">O</td>
+            <td>서비스 식별용</td>
+        </tr>
+    </table>
+
+    <div class="warning-box">
+        <strong>App Secret이 노출되면 즉시 재발급 받아야 합니다.</strong>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- Section 5 -->
+    <h2>5. API 권한 신청</h2>
+
+    <h3>5-1. 권한 신청 메뉴 접속</h3>
+    <ol>
+        <li>앱 상세 페이지에서 <strong>"Manage API"</strong> 클릭</li>
+        <li>필요한 권한 목록 확인</li>
+    </ol>
+
+    <h3>5-2. 필요 권한 목록</h3>
+    <table>
+        <tr>
+            <th>권한 (Scope)</th>
+            <th>용도</th>
+            <th style="width: 100px;">필요 여부</th>
+        </tr>
+        <tr>
+            <td><code>order.read</code></td>
+            <td>주문 데이터 조회</td>
+            <td><span class="badge badge-required">필수</span></td>
+        </tr>
+        <tr>
+            <td><code>product.read</code></td>
+            <td>상품 데이터 조회</td>
+            <td><span class="badge badge-required">필수</span></td>
+        </tr>
+        <tr>
+            <td><code>analytics.read</code></td>
+            <td>분석/캠페인 데이터 조회</td>
+            <td><span class="badge badge-required">필수</span></td>
+        </tr>
+        <tr>
+            <td><code>finance.read</code></td>
+            <td>정산 데이터 조회</td>
+            <td><span class="badge badge-optional">선택</span></td>
+        </tr>
+        <tr>
+            <td><code>logistics.read</code></td>
+            <td>배송/물류 데이터 조회</td>
+            <td><span class="badge badge-optional">선택</span></td>
+        </tr>
+        <tr>
+            <td><code>shop.read</code></td>
+            <td>스토어 정보 조회</td>
+            <td><span class="badge badge-optional">선택</span></td>
+        </tr>
+    </table>
+
+    <h3>5-3. 권한 신청 방법</h3>
+    <ol>
+        <li>각 권한 옆의 <strong>"Apply"</strong> 버튼 클릭</li>
+        <li><strong>사용 목적</strong> 작성 (영문)</li>
+    </ol>
+
+    <div class="code-box" style="background: #f5f5f5; color: #333;">
+        <strong>예시 (영문):</strong><br><br>
+        We need this permission to sync order data with our internal analytics dashboard for sales performance monitoring and inventory management.
+    </div>
+
+    <ol start="3">
+        <li><strong>"Submit"</strong> 클릭</li>
+        <li><strong>승인 대기:</strong> 약 1-5 영업일</li>
+    </ol>
+
+    <!-- Section 6 -->
+    <h2>6. 개발팀 전달 정보</h2>
+    <p>API 승인이 완료되면 아래 정보를 개발팀에 전달해 주세요:</p>
+
+    <div class="checklist">
+        <h3 style="margin-bottom: 20px; color: #fe2c55;">전달 정보 체크리스트</h3>
+
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div>
+                <strong>App Key</strong><br>
+                <span style="color: #999;">_________________________________________________</span>
+            </div>
+        </div>
+
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div>
+                <strong>App Secret</strong><br>
+                <span style="color: #999;">_________________________________________________</span>
+            </div>
+        </div>
+
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div>
+                <strong>Service ID</strong><br>
+                <span style="color: #999;">_________________________________________________</span>
+            </div>
+        </div>
+
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div>
+                <strong>Shop ID</strong> (Seller Center → Settings → Shop Information에서 확인)<br>
+                <span style="color: #999;">_________________________________________________</span>
+            </div>
+        </div>
+
+        <div class="checklist-item">
+            <div class="checkbox"></div>
+            <div>
+                <strong>승인된 권한 목록</strong><br>
+                <span style="color: #666;">
+                    ☐ order.read &nbsp;&nbsp;
+                    ☐ product.read &nbsp;&nbsp;
+                    ☐ analytics.read &nbsp;&nbsp;
+                    ☐ finance.read &nbsp;&nbsp;
+                    ☐ logistics.read
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <h3>Shop ID 확인 방법</h3>
+    <ol>
+        <li>TikTok Shop Seller Center 로그인</li>
+        <li>우측 상단 <strong>Settings(설정)</strong> 클릭</li>
+        <li><strong>Shop Information(스토어 정보)</strong> 메뉴</li>
+        <li><strong>Shop ID</strong> 복사</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <!-- Section 7 -->
+    <h2>7. 예상 소요 시간</h2>
+
+    <table>
+        <tr>
+            <th>단계</th>
+            <th style="width: 150px;">소요 시간</th>
+        </tr>
+        <tr>
+            <td>Partner Center 등록 승인</td>
+            <td>2-3 영업일</td>
+        </tr>
+        <tr>
+            <td>앱 생성</td>
+            <td>즉시</td>
+        </tr>
+        <tr>
+            <td>API 권한 승인</td>
+            <td>1-5 영업일</td>
+        </tr>
+        <tr>
+            <td>OAuth 인증 설정 (개발팀)</td>
+            <td>1-2 영업일</td>
+        </tr>
+        <tr style="background: #fff5f5;">
+            <td><strong>총 예상 소요 시간</strong></td>
+            <td><strong>약 1-2주</strong></td>
+        </tr>
+    </table>
+
+    <!-- Section 8 -->
+    <h2>8. 참고 자료</h2>
+
+    <h3>공식 문서</h3>
+    <ul>
+        <li><a href="https://partner.tiktokshop.com" target="_blank">TikTok Shop Partner Center</a></li>
+        <li><a href="https://partner.tiktokshop.com/docv2/page/tts-developer-guide" target="_blank">개발자 가이드</a></li>
+        <li><a href="https://partner.tiktokshop.com/docv2/page/seller-api-overview" target="_blank">Seller API Overview</a></li>
+        <li><a href="https://developers.tiktok.com/" target="_blank">TikTok for Developers</a></li>
+    </ul>
+
+    <h3>추가 참고</h3>
+    <ul>
+        <li><a href="https://www.keyapi.ai/blog/tiktok-shop-api-integration-guide-sellers" target="_blank">TikTok Shop API Integration Guide (KeyAPI)</a></li>
+        <li><a href="https://business-api.tiktok.com/portal" target="_blank">TikTok Business API Portal</a></li>
+    </ul>
+
+    <div class="footer">
+        <p>마지막 업데이트: 2026년 4월</p>
+        <p style="margin-top: 10px;">문의사항이 있으시면 담당자에게 연락해 주세요.</p>
+    </div>
+
+    <script class="no-print">
+        // Print button (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            const printBtn = document.createElement('button');
+            printBtn.textContent = '📄 PDF로 저장 (Ctrl/Cmd + P)';
+            printBtn.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:12px 20px;background:#fe2c55;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;';
+            printBtn.onclick = () => window.print();
+            document.body.appendChild(printBtn);
+        });
+    </script>
+</body>
+</html>
