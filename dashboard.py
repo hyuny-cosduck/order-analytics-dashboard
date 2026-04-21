@@ -276,22 +276,22 @@ def show_bundle_analysis(sheet_id: str):
 
     if error:
         st.error(f"데이터 로드 실패: {error}")
-        st.stop()
+        return
 
     if df is None or len(df) == 0:
         st.warning("데이터가 없습니다. Upload 탭에서 데이터를 업로드해주세요.")
-        st.stop()
+        return
 
     # Filter bundle SKUs
     if 'Seller SKU' not in df.columns:
         st.error("'Seller SKU' 컬럼이 없습니다.")
-        st.stop()
+        return
 
     bundle_df = df[df['Seller SKU'].str.contains('BDL_BEPLAIN', na=False)].copy()
 
     if len(bundle_df) == 0:
         st.info("번들 상품 데이터가 없습니다. (BDL_BEPLAIN으로 시작하는 SKU)")
-        st.stop()
+        return
 
     # Data preprocessing
     bundle_df['SKU Unit Original Price'] = pd.to_numeric(bundle_df['SKU Unit Original Price'], errors='coerce')
@@ -649,11 +649,11 @@ def show_dashboard_content(sheet_id: str):
 
     if error:
         st.error(f"데이터 로드 실패: {error}")
-        st.stop()
+        return
 
     if df is None or len(df) == 0:
         st.warning("데이터가 없습니다. Upload 탭에서 데이터를 업로드해주세요.")
-        st.stop()
+        return
 
     # Data preprocessing
     if 'Created Time' in df.columns:
@@ -674,12 +674,12 @@ def show_dashboard_content(sheet_id: str):
     # Check for valid dates
     if 'Created Date' not in df.columns:
         st.error("'Created Time' 컬럼이 없습니다.")
-        st.stop()
+        return
 
     valid_dates = df['Created Date'].dropna()
     if len(valid_dates) == 0:
         st.error("유효한 날짜 데이터가 없습니다.")
-        st.stop()
+        return
 
     # Date filter setup
     min_date = pd.to_datetime(valid_dates.min()).date()
