@@ -379,7 +379,7 @@ def show_bundle_analysis(sheet_id: str):
 
     # ===== KPI Summary =====
     total_bundle = len(bundle_df)
-    canceled_bundle = len(bundle_df[bundle_df['Order Status'] == 'Canceled'])
+    canceled_bundle = len(bundle_df[bundle_df['Order Status'].isin(('Canceled', 'Cancelled'))])
     cancel_rate = canceled_bundle / total_bundle * 100 if total_bundle > 0 else 0
 
     col1, col2, col3, col4 = st.columns(4)
@@ -403,7 +403,7 @@ def show_bundle_analysis(sheet_id: str):
         'SKU Unit Original Price': 'first',
         'Product Name': 'first',
         'Order ID': 'count',
-        'Order Status': lambda x: (x == 'Canceled').sum()
+        'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum()
     }).reset_index()
     sku_stats.columns = ['SKU', '단가', 'Product Name', '전체건수', '취소건수']
     sku_stats['취소율(%)'] = (sku_stats['취소건수'] / sku_stats['전체건수'] * 100).round(1)
@@ -466,7 +466,7 @@ def show_bundle_analysis(sheet_id: str):
 
     price_stats = bundle_df.groupby('Price Range', observed=True).agg({
         'Order ID': 'count',
-        'Order Status': lambda x: (x == 'Canceled').sum()
+        'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum()
     }).reset_index()
     price_stats.columns = ['가격대', '전체건수', '취소건수']
     price_stats['취소율(%)'] = (price_stats['취소건수'] / price_stats['전체건수'] * 100).round(1)
@@ -516,7 +516,7 @@ def show_bundle_analysis(sheet_id: str):
 
     type_stats = bundle_df.groupby('Bundle Type').agg({
         'Order ID': 'count',
-        'Order Status': lambda x: (x == 'Canceled').sum(),
+        'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum(),
         'SKU Unit Original Price': 'mean'
     }).reset_index()
     type_stats.columns = ['번들유형', '전체건수', '취소건수', '평균가격']
@@ -557,7 +557,7 @@ def show_bundle_analysis(sheet_id: str):
 
         daily_stats = bundle_df.groupby('Created Date').agg({
             'Order ID': 'count',
-            'Order Status': lambda x: (x == 'Canceled').sum()
+            'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum()
         }).reset_index()
         daily_stats.columns = ['Date', '전체건수', '취소건수']
         daily_stats['취소율(%)'] = (daily_stats['취소건수'] / daily_stats['전체건수'] * 100).round(1)
@@ -768,7 +768,7 @@ def show_dashboard_content(sheet_id: str):
 
     total_orders = len(order_info)
     total_amount = order_info['Order Amount'].sum()
-    canceled_orders = order_info[order_info['Order Status'] == 'Canceled']
+    canceled_orders = order_info[order_info['Order Status'].isin(('Canceled', 'Cancelled'))]
     cancel_count = len(canceled_orders)
     cancel_rate = cancel_count / total_orders * 100 if total_orders > 0 else 0
     cancel_amount = canceled_orders['Order Amount'].sum()
@@ -822,7 +822,7 @@ def show_dashboard_content(sheet_id: str):
         'Order ID': 'count', 'Order Amount': 'sum'
     }).rename(columns={'Order ID': '전체주문수', 'Order Amount': '전체매출'})
 
-    daily_canceled = order_info[order_info['Order Status'] == 'Canceled'].groupby('Created Date').agg({
+    daily_canceled = order_info[order_info['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Created Date').agg({
         'Order ID': 'count', 'Order Amount': 'sum'
     }).rename(columns={'Order ID': '취소주문수', 'Order Amount': '취소매출'})
 
@@ -865,7 +865,7 @@ def show_dashboard_content(sheet_id: str):
             'Quantity': 'sum', 'Order ID': 'nunique'
         }).rename(columns={'Quantity': '전체수량', 'Order ID': '전체주문건수'})
 
-        sku_canceled = df[df['Order Status'] == 'Canceled'].groupby('Seller SKU').agg({
+        sku_canceled = df[df['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Seller SKU').agg({
             'Quantity': 'sum'
         }).rename(columns={'Quantity': '취소수량'})
 
@@ -936,7 +936,7 @@ def show_dashboard_content(sheet_id: str):
     if 'Tracking ID' in df.columns:
         st.subheader("🚚 취소 주문의 출고 여부 (Tracking ID 기준)")
 
-        canceled_orders_detail = df[df['Order Status'] == 'Canceled'].groupby('Order ID').agg({
+        canceled_orders_detail = df[df['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Order ID').agg({
             'Order Amount': 'first',
             'Tracking ID': 'first',
             'Cancel By': 'first' if 'Cancel By' in df.columns else lambda x: None,
@@ -989,7 +989,7 @@ def show_dashboard_content(sheet_id: str):
             'Order ID': 'count', 'Order Amount': 'sum'
         }).rename(columns={'Order ID': '전체주문수', 'Order Amount': '전체매출'})
 
-        payment_canceled = order_info[order_info['Order Status'] == 'Canceled'].groupby('Payment Method').agg({
+        payment_canceled = order_info[order_info['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Payment Method').agg({
             'Order ID': 'count'
         }).rename(columns={'Order ID': '취소주문수'})
 
@@ -1012,8 +1012,8 @@ def show_dashboard_content(sheet_id: str):
             cod_orders = order_info[order_info['Payment Method'].isin(cod_methods)]
             non_cod_orders = order_info[~order_info['Payment Method'].isin(cod_methods)]
 
-            cod_cancel_rate = len(cod_orders[cod_orders['Order Status'] == 'Canceled']) / len(cod_orders) * 100 if len(cod_orders) > 0 else 0
-            non_cod_cancel_rate = len(non_cod_orders[non_cod_orders['Order Status'] == 'Canceled']) / len(non_cod_orders) * 100 if len(non_cod_orders) > 0 else 0
+            cod_cancel_rate = len(cod_orders[cod_orders['Order Status'].isin(('Canceled', 'Cancelled'))]) / len(cod_orders) * 100 if len(cod_orders) > 0 else 0
+            non_cod_cancel_rate = len(non_cod_orders[non_cod_orders['Order Status'].isin(('Canceled', 'Cancelled'))]) / len(non_cod_orders) * 100 if len(non_cod_orders) > 0 else 0
 
             compare_df = pd.DataFrame({
                 '결제유형': ['COD/현금', '선결제'],
