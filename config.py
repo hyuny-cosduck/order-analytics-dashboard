@@ -7,9 +7,11 @@ import streamlit as st
 def _get_secret(key: str, default: str = None):
     """Get secret from Streamlit secrets or return default."""
     try:
-        return st.secrets.get(key, default)
+        if key in st.secrets:
+            return st.secrets[key]
     except Exception:
-        return default
+        pass
+    return default
 
 # Google Cloud Settings
 # For local development: use JSON file
