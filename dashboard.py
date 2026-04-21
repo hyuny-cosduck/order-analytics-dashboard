@@ -23,6 +23,18 @@ def load_sheet_data(sheet_id: str):
     """Shared cached loader — both Dashboard and Bundle Analysis tabs reuse one cache entry."""
     return sheets_manager.read_sheet_data(sheet_id)
 
+
+def parse_created_time(series: pd.Series) -> pd.Series:
+    # TikTok Shop exports use two different locale formats:
+    # '31/12/2025 22:55:42' (DD/MM/YYYY, 24h) and '03/31/2026 8:12:46 PM' (MM/DD/YYYY, 12h).
+    s = series.astype(str).str.strip()
+    dt = pd.to_datetime(s, format='%d/%m/%Y %H:%M:%S', errors='coerce')
+    mask = dt.isna() & s.notna() & (s != '') & (s.str.lower() != 'nan')
+    if mask.any():
+        fallback = pd.to_datetime(s[mask], format='%m/%d/%Y %I:%M:%S %p', errors='coerce')
+        dt.loc[mask] = fallback
+    return dt
+
 # ===== Session State Initialization =====
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -299,7 +311,7 @@ def show_bundle_analysis(sheet_id: str):
     bundle_df['Quantity'] = pd.to_numeric(bundle_df['Quantity'], errors='coerce')
 
     if 'Created Time' in bundle_df.columns:
-        bundle_df['Created Date'] = pd.to_datetime(bundle_df['Created Time'].astype(str).str.strip(), format='%d/%m/%Y %H:%M:%S', errors='coerce').dt.date
+        bundle_df['Created Date'] = parse_created_time(bundle_df['Created Time']).dt.date
 
     # ===== Date Filter (applied before KPIs so metrics respect selection) =====
     if 'Created Date' in bundle_df.columns:
@@ -666,7 +678,7 @@ def show_dashboard_content(sheet_id: str):
 
     # Date conversion
     if 'Created Time' in df.columns:
-        df['Created Date'] = pd.to_datetime(df['Created Time'].astype(str).str.strip(), format='%d/%m/%Y %H:%M:%S', errors='coerce').dt.date
+        df['Created Date'] = parse_created_time(df['Created Time']).dt.date
 
     with col_info:
         st.caption(f"전체 데이터: {len(df):,}행")
