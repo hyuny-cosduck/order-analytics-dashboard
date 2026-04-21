@@ -115,8 +115,12 @@ def show_admin_login_page():
 def show_admin_panel():
     st.title("🔧 Admin Panel")
 
-    col1, col2 = st.columns([4, 1])
+    col1, col2, col3 = st.columns([4, 1, 1])
     with col2:
+        if st.button("🔄 Refresh", type="secondary"):
+            st.cache_data.clear()
+            st.rerun()
+    with col3:
         if st.button("Logout", type="secondary"):
             logout()
 

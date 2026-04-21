@@ -41,7 +41,7 @@ def create_brand_sheet(brand_name: str) -> Tuple[str, str]:
     client = get_client()
 
     # Create the spreadsheet
-    sheet_title = f"{brand_name} Orders"
+    sheet_title = f"{brand_name} Data Center"
     spreadsheet = client.create(sheet_title, folder_id=config.DRIVE_FOLDER_ID)
 
     # Set up the first worksheet with headers
