@@ -715,33 +715,35 @@ def show_dashboard_content(sheet_id: str):
             key="main_month_sel",
         )
 
-    # When a specific month is selected, derive start/end directly — no widget
-    # state fighting.  Only show the date_input (for custom ranges) when the
-    # user picks "전체 기간" or a quick button.
     if selected_month != "전체 기간":
         year, month = map(int, selected_month.split('-'))
         last_day = calendar.monthrange(year, month)[1]
-        start_date = max(pd.Timestamp(year, month, 1).date(), min_date)
-        end_date = min(pd.Timestamp(year, month, last_day).date(), max_date)
-        with col_range:
-            st.text_input("기간", value=f"{start_date} ~ {end_date}", disabled=True)
+        default_start = max(pd.Timestamp(year, month, 1).date(), min_date)
+        default_end = min(pd.Timestamp(year, month, last_day).date(), max_date)
+        # Use a month-specific key so switching months resets value to month
+        # boundaries, but the user can still fine-tune within the month.
+        range_key = f"main_range_{selected_month}"
     else:
+        default_start, default_end = min_date, max_date
+        range_key = "main_range"
         # Promote any pending range (set by quick buttons on the previous run)
         # into the widget key BEFORE the widget is instantiated.
         if '_pending_main_range' in st.session_state:
-            st.session_state['main_range'] = st.session_state.pop('_pending_main_range')
-        with col_range:
-            date_range = st.date_input(
-                "기간",
-                value=(min_date, max_date),
-                min_value=min_date,
-                max_value=max_date,
-                key="main_range",
-            )
-        if isinstance(date_range, tuple) and len(date_range) == 2:
-            start_date, end_date = date_range
-        else:
-            start_date, end_date = min_date, max_date
+            st.session_state[range_key] = st.session_state.pop('_pending_main_range')
+
+    with col_range:
+        date_range = st.date_input(
+            "기간",
+            value=(default_start, default_end),
+            min_value=min_date,
+            max_value=max_date,
+            key=range_key,
+        )
+
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        start_date, end_date = date_range
+    else:
+        start_date, end_date = default_start, default_end
 
     # Quick selection buttons — stash into a pending key, then rerun.
     # Also reset month selector to "전체 기간" so the date_input is visible.
