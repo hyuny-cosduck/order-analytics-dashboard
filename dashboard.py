@@ -155,7 +155,8 @@ def show_admin_panel():
 
                     with col1:
                         st.write(f"**Sheet ID:** `{data.get('sheet_id', 'N/A')}`")
-                        st.write(f"**Password:** `{data.get('password', 'N/A')}`")
+                        st.write("**Password:**")
+                        st.code(data.get('password', 'N/A'), language=None)
                         if data.get('sheet_url'):
                             st.write(f"[Open Google Sheet]({data.get('sheet_url')})")
 
@@ -703,46 +704,52 @@ def show_dashboard_content(sheet_id: str):
     df['Year-Month'] = df['Created Date'].apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
     available_months = sorted(df['Year-Month'].dropna().unique(), reverse=True)
 
-    # Promote any pending range (set by buttons on the previous run) into the
-    # widget key BEFORE the widget is instantiated — Streamlit disallows
-    # mutating a widget-bound key after its widget has already rendered.
-    if '_pending_main_range' in st.session_state:
-        st.session_state['main_range'] = st.session_state.pop('_pending_main_range')
-
     col_month, col_range = st.columns([1, 2])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
-        selected_month = st.selectbox("월 선택", options=month_options, index=0)
+        selected_month = st.selectbox(
+            "월 선택",
+            options=month_options,
+            index=0,
+            key="main_month_sel",
+        )
 
+    # When a specific month is selected, derive start/end directly — no widget
+    # state fighting.  Only show the date_input (for custom ranges) when the
+    # user picks "전체 기간" or a quick button.
     if selected_month != "전체 기간":
         year, month = map(int, selected_month.split('-'))
         last_day = calendar.monthrange(year, month)[1]
-        default_start = max(pd.Timestamp(year, month, 1).date(), min_date)
-        default_end = min(pd.Timestamp(year, month, last_day).date(), max_date)
+        start_date = max(pd.Timestamp(year, month, 1).date(), min_date)
+        end_date = min(pd.Timestamp(year, month, last_day).date(), max_date)
+        with col_range:
+            st.text_input("기간", value=f"{start_date} ~ {end_date}", disabled=True)
     else:
-        default_start = min_date
-        default_end = max_date
-
-    with col_range:
-        date_range = st.date_input(
-            "기간",
-            value=(default_start, default_end),
-            min_value=min_date,
-            max_value=max_date,
-            key="main_range",
-        )
-
-    if isinstance(date_range, tuple) and len(date_range) == 2:
-        start_date, end_date = date_range
-    else:
-        start_date, end_date = default_start, default_end
+        # Promote any pending range (set by quick buttons on the previous run)
+        # into the widget key BEFORE the widget is instantiated.
+        if '_pending_main_range' in st.session_state:
+            st.session_state['main_range'] = st.session_state.pop('_pending_main_range')
+        with col_range:
+            date_range = st.date_input(
+                "기간",
+                value=(min_date, max_date),
+                min_value=min_date,
+                max_value=max_date,
+                key="main_range",
+            )
+        if isinstance(date_range, tuple) and len(date_range) == 2:
+            start_date, end_date = date_range
+        else:
+            start_date, end_date = min_date, max_date
 
     # Quick selection buttons — stash into a pending key, then rerun.
+    # Also reset month selector to "전체 기간" so the date_input is visible.
     st.write("빠른 선택:")
     quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
     def _queue_range(start, end):
+        st.session_state['main_month_sel'] = "전체 기간"
         st.session_state['_pending_main_range'] = (start, end)
         st.rerun()
 
