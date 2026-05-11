@@ -742,8 +742,14 @@ def show_dashboard_content(sheet_id: str):
 
     if isinstance(date_range, tuple) and len(date_range) == 2:
         start_date, end_date = date_range
+        st.session_state['_confirmed_main_range'] = (start_date, end_date)
     else:
-        start_date, end_date = default_start, default_end
+        # User has picked a start date but not yet an end date — hold the
+        # previous confirmed range so the data doesn't jump mid-selection.
+        if '_confirmed_main_range' in st.session_state:
+            start_date, end_date = st.session_state['_confirmed_main_range']
+        else:
+            start_date, end_date = default_start, default_end
 
     # Quick selection buttons — stash into a pending key, then rerun.
     # Also reset month selector to "전체 기간" so the date_input is visible.
