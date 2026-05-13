@@ -419,11 +419,11 @@ def show_bundle_analysis(sheet_id: str):
         'Quantity': 'sum',
         'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum()
     }).reset_index()
-    sku_stats.columns = ['SKU', '단가', 'Product Name', '전체건수', '전체수량', '취소건수']
+    sku_stats.columns = ['SKU', '단가', 'Product Name', '전체 주문(order ID)', '전체 주문(quantity)', '취소 주문(order ID)']
     canceled_qty = bundle_df[bundle_df['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Seller SKU')['Quantity'].sum()
-    sku_stats['취소수량'] = sku_stats['SKU'].map(canceled_qty).fillna(0).astype(int)
-    sku_stats['취소율(%)'] = (sku_stats['취소건수'] / sku_stats['전체건수'] * 100).round(1)
-    sku_stats = sku_stats.sort_values('전체건수', ascending=False)
+    sku_stats['취소 주문(quantity)'] = sku_stats['SKU'].map(canceled_qty).fillna(0).astype(int)
+    sku_stats['취소율(%)'] = (sku_stats['취소 주문(order ID)'] / sku_stats['전체 주문(order ID)'] * 100).round(1)
+    sku_stats = sku_stats.sort_values('전체 주문(order ID)', ascending=False)
 
     # Build a short display name: strip BEPLAIN / MUNG BEAN prefix, volume specs,
     # and anything after a pipe/comma, then title-case.
@@ -445,10 +445,10 @@ def show_bundle_analysis(sheet_id: str):
 
     with col1:
         fig_sku = px.bar(
-            sku_stats, x='번호', y=['전체건수', '취소건수'],
+            sku_stats, x='번호', y=['전체 주문(order ID)', '취소 주문(order ID)'],
             title='번들 상품별 주문/취소 현황',
             barmode='group',
-            color_discrete_map={'전체건수': '#4CAF50', '취소건수': '#f44336'},
+            color_discrete_map={'전체 주문(order ID)': '#4CAF50', '취소 주문(order ID)': '#f44336'},
             hover_data={'상품명': True, 'Product Name': True, 'SKU': True, '번호': False},
         )
         fig_sku.update_layout(xaxis_title='번들 번호', xaxis={'categoryorder': 'array', 'categoryarray': sku_stats['번호'].tolist()})
@@ -465,7 +465,7 @@ def show_bundle_analysis(sheet_id: str):
         st.plotly_chart(fig_cancel, use_container_width=True)
 
     with st.expander("📋 번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
-        display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체건수', '전체수량', '취소건수', '취소수량', '취소율(%)']].copy()
+        display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체 주문(order ID)', '전체 주문(quantity)', '취소 주문(order ID)', '취소 주문(quantity)', '취소율(%)']].copy()
         display_df['단가'] = display_df['단가'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) and x > 0 else "-")
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
@@ -894,22 +894,22 @@ def show_dashboard_content(sheet_id: str):
         sku_all = df.groupby('Seller SKU').agg({
             'Quantity': 'sum', 'Order ID': ['nunique', 'count']
         })
-        sku_all.columns = ['전체수량', '전체주문건수', '전체건수']
+        sku_all.columns = ['전체 주문(quantity)', '전체주문건수', '전체 주문(order ID)']
 
         canceled_df = df[df['Order Status'].isin(('Canceled', 'Cancelled'))]
         sku_canceled = canceled_df.groupby('Seller SKU').agg({
             'Quantity': 'sum', 'Order ID': 'count'
         })
-        sku_canceled.columns = ['취소수량', '취소건수']
+        sku_canceled.columns = ['취소 주문(quantity)', '취소 주문(order ID)']
 
         sku_summary = sku_all.join(sku_canceled).fillna(0).reset_index()
-        sku_summary['취소수량'] = sku_summary['취소수량'].astype(int)
-        sku_summary['취소건수'] = sku_summary['취소건수'].astype(int)
+        sku_summary['취소 주문(quantity)'] = sku_summary['취소 주문(quantity)'].astype(int)
+        sku_summary['취소 주문(order ID)'] = sku_summary['취소 주문(order ID)'].astype(int)
         if len(product_name_map) > 0:
             sku_summary['Product Name'] = sku_summary['Seller SKU'].map(product_name_map)
-        sku_summary['정상수량'] = sku_summary['전체수량'] - sku_summary['취소수량']
-        sku_summary['취소율(%)'] = (sku_summary['취소수량'] / sku_summary['전체수량'] * 100).round(1)
-        sku_summary = sku_summary.sort_values('전체수량', ascending=False)
+        sku_summary['정상 주문(quantity)'] = sku_summary['전체 주문(quantity)'] - sku_summary['취소 주문(quantity)']
+        sku_summary['취소율(%)'] = (sku_summary['취소 주문(quantity)'] / sku_summary['전체 주문(quantity)'] * 100).round(1)
+        sku_summary = sku_summary.sort_values('전체 주문(quantity)', ascending=False)
 
         import re
         def _strip_brand(name):
@@ -930,16 +930,16 @@ def show_dashboard_content(sheet_id: str):
             top_sku = sku_summary.head(10).reset_index(drop=True).copy()
             top_sku['번호'] = ['#' + str(i + 1) for i in range(len(top_sku))]
             fig_sku = px.bar(
-                top_sku, x='번호', y=['정상수량', '취소수량'], barmode='stack',
+                top_sku, x='번호', y=['정상 주문(quantity)', '취소 주문(quantity)'], barmode='stack',
                 title='상위 10개 제품 판매 현황 (전체 판매량 기준)',
-                color_discrete_map={'정상수량': '#4CAF50', '취소수량': '#f44336'},
+                color_discrete_map={'정상 주문(quantity)': '#4CAF50', '취소 주문(quantity)': '#f44336'},
                 hover_data={'Product Name Short': False, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in top_sku.columns else {'Product Name Short': False, '번호': False},
             )
             fig_sku.update_layout(xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': top_sku['번호'].tolist()})
             st.plotly_chart(fig_sku, use_container_width=True)
 
         with col2:
-            high_cancel_sku = sku_summary[sku_summary['전체수량'] >= 10].nlargest(10, '취소율(%)').reset_index(drop=True).copy()
+            high_cancel_sku = sku_summary[sku_summary['전체 주문(quantity)'] >= 10].nlargest(10, '취소율(%)').reset_index(drop=True).copy()
             high_cancel_sku['번호'] = ['#' + str(i + 1) for i in range(len(high_cancel_sku))]
             fig_cancel_sku = px.bar(
                 high_cancel_sku, x='번호', y='취소율(%)',
@@ -954,14 +954,14 @@ def show_dashboard_content(sheet_id: str):
         map_col1, map_col2 = st.columns(2)
         with map_col1:
             st.caption("📋 상위 10개 제품 매칭")
-            map_cols_top = ['번호', 'Product Name', '전체수량', '정상수량', '취소수량', '취소율(%)']
+            map_cols_top = ['번호', 'Product Name', '전체 주문(quantity)', '정상 주문(quantity)', '취소 주문(quantity)', '취소율(%)']
             st.dataframe(top_sku[[c for c in map_cols_top if c in top_sku.columns]], use_container_width=True, hide_index=True)
         with map_col2:
             st.caption("📋 취소율 상위 10개 제품 매칭")
             st.dataframe(high_cancel_sku[[c for c in map_cols_top if c in high_cancel_sku.columns]], use_container_width=True, hide_index=True)
 
         with st.expander("📋 전체 제품 상세 데이터"):
-            display_cols = ['Product Name', 'Seller SKU', '전체건수', '전체수량', '정상수량', '취소건수', '취소수량', '취소율(%)', '전체주문건수']
+            display_cols = ['Product Name', 'Seller SKU', '전체 주문(order ID)', '전체 주문(quantity)', '정상 주문(quantity)', '취소 주문(order ID)', '취소 주문(quantity)', '취소율(%)', '전체주문건수']
             available_cols = [c for c in display_cols if c in sku_summary.columns]
             st.dataframe(sku_summary[available_cols], use_container_width=True)
 
