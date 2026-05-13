@@ -416,9 +416,12 @@ def show_bundle_analysis(sheet_id: str):
         'SKU Unit Original Price': 'first',
         'Product Name': 'first',
         'Order ID': 'count',
+        'Quantity': 'sum',
         'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum()
     }).reset_index()
-    sku_stats.columns = ['SKU', '단가', 'Product Name', '전체건수', '취소건수']
+    sku_stats.columns = ['SKU', '단가', 'Product Name', '전체건수', '전체수량', '취소건수']
+    canceled_qty = bundle_df[bundle_df['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Seller SKU')['Quantity'].sum()
+    sku_stats['취소수량'] = sku_stats['SKU'].map(canceled_qty).fillna(0).astype(int)
     sku_stats['취소율(%)'] = (sku_stats['취소건수'] / sku_stats['전체건수'] * 100).round(1)
     sku_stats = sku_stats.sort_values('전체건수', ascending=False)
 
@@ -462,7 +465,7 @@ def show_bundle_analysis(sheet_id: str):
         st.plotly_chart(fig_cancel, use_container_width=True)
 
     with st.expander("📋 번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
-        display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체건수', '취소건수', '취소율(%)']].copy()
+        display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체건수', '전체수량', '취소건수', '취소수량', '취소율(%)']].copy()
         display_df['단가'] = display_df['단가'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) and x > 0 else "-")
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
@@ -889,14 +892,19 @@ def show_dashboard_content(sheet_id: str):
         product_name_map = df.groupby('Seller SKU')['Product Name'].first() if 'Product Name' in df.columns else {}
 
         sku_all = df.groupby('Seller SKU').agg({
-            'Quantity': 'sum', 'Order ID': 'nunique'
-        }).rename(columns={'Quantity': '전체수량', 'Order ID': '전체주문건수'})
+            'Quantity': 'sum', 'Order ID': ['nunique', 'count']
+        })
+        sku_all.columns = ['전체수량', '전체주문건수', '전체건수']
 
-        sku_canceled = df[df['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Seller SKU').agg({
-            'Quantity': 'sum'
-        }).rename(columns={'Quantity': '취소수량'})
+        canceled_df = df[df['Order Status'].isin(('Canceled', 'Cancelled'))]
+        sku_canceled = canceled_df.groupby('Seller SKU').agg({
+            'Quantity': 'sum', 'Order ID': 'count'
+        })
+        sku_canceled.columns = ['취소수량', '취소건수']
 
         sku_summary = sku_all.join(sku_canceled).fillna(0).reset_index()
+        sku_summary['취소수량'] = sku_summary['취소수량'].astype(int)
+        sku_summary['취소건수'] = sku_summary['취소건수'].astype(int)
         if len(product_name_map) > 0:
             sku_summary['Product Name'] = sku_summary['Seller SKU'].map(product_name_map)
         sku_summary['정상수량'] = sku_summary['전체수량'] - sku_summary['취소수량']
@@ -953,7 +961,7 @@ def show_dashboard_content(sheet_id: str):
             st.dataframe(high_cancel_sku[[c for c in map_cols_top if c in high_cancel_sku.columns]], use_container_width=True, hide_index=True)
 
         with st.expander("📋 전체 제품 상세 데이터"):
-            display_cols = ['Product Name', 'Seller SKU', '전체수량', '정상수량', '취소수량', '취소율(%)', '전체주문건수']
+            display_cols = ['Product Name', 'Seller SKU', '전체건수', '전체수량', '정상수량', '취소건수', '취소수량', '취소율(%)', '전체주문건수']
             available_cols = [c for c in display_cols if c in sku_summary.columns]
             st.dataframe(sku_summary[available_cols], use_container_width=True)
 
