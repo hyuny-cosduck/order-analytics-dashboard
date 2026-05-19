@@ -230,28 +230,29 @@ def list_sheets_in_folder() -> List[Dict]:
     try:
         client = get_client()
 
-        # Query for spreadsheets in the folder
-        query = f"'{config.DRIVE_FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.spreadsheet'"
-        files = client.list_spreadsheet_files()
+        query = (
+            f"'{config.DRIVE_FOLDER_ID}' in parents"
+            f" and mimeType='application/vnd.google-apps.spreadsheet'"
+            f" and trashed=false"
+        )
+        response = client.http_client.request(
+            'get',
+            'https://www.googleapis.com/drive/v3/files',
+            params={'q': query, 'fields': 'files(id,name)', 'pageSize': 100}
+        )
+        files = response.json().get('files', [])
 
-        # Filter to only those in our folder
-        # Note: list_spreadsheet_files doesn't filter by folder, so we need to check
-        result = []
-        for f in files:
-            try:
-                spreadsheet = client.open_by_key(f['id'])
-                # Verify it's in our folder by checking parents
-                result.append({
-                    'id': f['id'],
-                    'name': f['name'],
-                    'url': f"https://docs.google.com/spreadsheets/d/{f['id']}"
-                })
-            except:
-                pass
-
-        return result
+        return [
+            {
+                'id': f['id'],
+                'name': f['name'],
+                'url': f"https://docs.google.com/spreadsheets/d/{f['id']}"
+            }
+            for f in files
+        ]
 
     except Exception as e:
+        print(f"Error listing sheets in folder: {e}")
         return []
 
 
@@ -290,12 +291,22 @@ def _get_or_create_config_sheet() -> gspread.Spreadsheet:
 
     # Try to find existing config sheet in the folder
     try:
-        files = client.list_spreadsheet_files()
-        for f in files:
-            if f['name'] == CONFIG_SHEET_NAME:
-                return client.open_by_key(f['id'])
-    except:
-        pass
+        query = (
+            f"'{config.DRIVE_FOLDER_ID}' in parents"
+            f" and name='{CONFIG_SHEET_NAME}'"
+            f" and mimeType='application/vnd.google-apps.spreadsheet'"
+            f" and trashed=false"
+        )
+        response = client.http_client.request(
+            'get',
+            'https://www.googleapis.com/drive/v3/files',
+            params={'q': query, 'fields': 'files(id,name)', 'pageSize': 10}
+        )
+        files = response.json().get('files', [])
+        if files:
+            return client.open_by_key(files[0]['id'])
+    except Exception as e:
+        print(f"Error finding config sheet: {e}")
 
     # Create new config sheet
     spreadsheet = client.create(CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID)
