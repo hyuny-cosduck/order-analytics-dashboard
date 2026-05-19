@@ -230,17 +230,7 @@ def list_sheets_in_folder() -> List[Dict]:
     try:
         client = get_client()
 
-        query = (
-            f"'{config.DRIVE_FOLDER_ID}' in parents"
-            f" and mimeType='application/vnd.google-apps.spreadsheet'"
-            f" and trashed=false"
-        )
-        response = client.http_client.request(
-            'get',
-            'https://www.googleapis.com/drive/v3/files',
-            params={'q': query, 'fields': 'files(id,name)', 'pageSize': 100}
-        )
-        files = response.json().get('files', [])
+        files = client.list_spreadsheet_files(folder_id=config.DRIVE_FOLDER_ID)
 
         return [
             {
@@ -291,18 +281,9 @@ def _get_or_create_config_sheet() -> gspread.Spreadsheet:
 
     # Try to find existing config sheet in the folder
     try:
-        query = (
-            f"'{config.DRIVE_FOLDER_ID}' in parents"
-            f" and name='{CONFIG_SHEET_NAME}'"
-            f" and mimeType='application/vnd.google-apps.spreadsheet'"
-            f" and trashed=false"
+        files = client.list_spreadsheet_files(
+            title=CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID
         )
-        response = client.http_client.request(
-            'get',
-            'https://www.googleapis.com/drive/v3/files',
-            params={'q': query, 'fields': 'files(id,name)', 'pageSize': 10}
-        )
-        files = response.json().get('files', [])
         if files:
             return client.open_by_key(files[0]['id'])
     except Exception as e:
