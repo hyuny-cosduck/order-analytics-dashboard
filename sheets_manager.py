@@ -284,7 +284,16 @@ def _get_or_create_config_sheet() -> gspread.Spreadsheet:
         files = client.list_spreadsheet_files(
             title=CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID
         )
-        if files:
+        # If multiple config sheets exist (from past bug), pick the one with data
+        if len(files) == 1:
+            return client.open_by_key(files[0]['id'])
+        elif len(files) > 1:
+            for f in files:
+                sp = client.open_by_key(f['id'])
+                data = sp.sheet1.get_all_values()
+                if len(data) > 1:  # Has data beyond header
+                    return sp
+            # All empty — just use the first one
             return client.open_by_key(files[0]['id'])
     except Exception as e:
         print(f"Error finding config sheet: {e}")
