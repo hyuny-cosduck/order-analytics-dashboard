@@ -36,16 +36,14 @@ def parse_created_time(series: pd.Series) -> pd.Series:
     return dt
 
 
-CURRENCY_SYMBOLS = {"Rp": "Rp", "USD": "$", "KRW": "₩"}
-CURRENCY_OPTIONS = list(CURRENCY_SYMBOLS.keys())
+CURRENCY_OPTIONS = ["Rp", "USD", "KRW"]
 
 
 def fmt_money(value, currency="Rp"):
-    """Format a monetary value with the given currency symbol."""
+    """Format a monetary value with the given currency label."""
     if pd.isna(value):
         return "-"
-    symbol = CURRENCY_SYMBOLS.get(currency, currency)
-    return f"{symbol} {value:,.0f}"
+    return f"{currency} {value:,.0f}"
 
 
 # ===== Session State Initialization =====
