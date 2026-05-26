@@ -1,6 +1,7 @@
 # Google Sheets and Drive API Manager
 # Only operates within the designated folder - no other files/folders are touched
 
+import time
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -13,10 +14,30 @@ SCOPES = [
     'https://www.googleapis.com/auth/drive'
 ]
 
+# Module-level caches to avoid repeated API calls within the same process
+_cached_client: Optional[gspread.Client] = None
+_cached_config_sheet_id: Optional[str] = None
+
+
+def _retry_on_quota(fn, max_retries=3):
+    """Retry a function on 429 quota errors with exponential backoff."""
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except gspread.exceptions.APIError as e:
+            if e.response.status_code == 429 and attempt < max_retries - 1:
+                wait = 30 * (attempt + 1)  # 30s, 60s — enough for per-minute quota reset
+                time.sleep(wait)
+            else:
+                raise
+
 
 def get_client() -> gspread.Client:
-    """Get authenticated gspread client."""
-    # Try to get credentials from secrets (Streamlit Cloud) or file (local)
+    """Get authenticated gspread client (cached)."""
+    global _cached_client
+    if _cached_client is not None:
+        return _cached_client
+
     service_account_info = config.get_service_account_info()
 
     if service_account_info:
@@ -25,12 +46,12 @@ def get_client() -> gspread.Client:
             scopes=SCOPES
         )
     else:
-        # Fall back to file-based credentials
         creds = Credentials.from_service_account_file(
             config.SERVICE_ACCOUNT_FILE,
             scopes=SCOPES
         )
-    return gspread.authorize(creds)
+    _cached_client = gspread.authorize(creds)
+    return _cached_client
 
 
 def create_brand_sheet(brand_name: str) -> Tuple[str, str]:
@@ -42,7 +63,9 @@ def create_brand_sheet(brand_name: str) -> Tuple[str, str]:
 
     # Create the spreadsheet
     sheet_title = f"{brand_name} Data Center"
-    spreadsheet = client.create(sheet_title, folder_id=config.DRIVE_FOLDER_ID)
+    spreadsheet = _retry_on_quota(
+        lambda: client.create(sheet_title, folder_id=config.DRIVE_FOLDER_ID)
+    )
 
     # Set up the first worksheet with headers
     worksheet = spreadsheet.sheet1
@@ -61,15 +84,16 @@ def create_brand_sheet(brand_name: str) -> Tuple[str, str]:
     return spreadsheet.id, spreadsheet.url
 
 
-def get_sheet_by_id(sheet_id: str) -> Optional[gspread.Spreadsheet]:
-    """Get a spreadsheet by its ID."""
+def get_sheet_by_id(sheet_id: str) -> Tuple[Optional[gspread.Spreadsheet], Optional[str]]:
+    """Get a spreadsheet by its ID. Returns (spreadsheet, error_message)."""
     try:
         client = get_client()
-        return client.open_by_key(sheet_id)
+        spreadsheet = _retry_on_quota(lambda: client.open_by_key(sheet_id))
+        return spreadsheet, None
     except gspread.exceptions.SpreadsheetNotFound:
-        return None
-    except Exception:
-        return None
+        return None, "Sheet not found"
+    except Exception as e:
+        return None, f"Sheet access error: {e}"
 
 
 def read_sheet_data(sheet_id: str) -> Tuple[Optional[pd.DataFrame], Optional[str]]:
@@ -78,12 +102,12 @@ def read_sheet_data(sheet_id: str) -> Tuple[Optional[pd.DataFrame], Optional[str
     Returns (dataframe, error_message).
     """
     try:
-        spreadsheet = get_sheet_by_id(sheet_id)
+        spreadsheet, sheet_err = get_sheet_by_id(sheet_id)
         if spreadsheet is None:
-            return None, "Sheet not found"
+            return None, sheet_err
 
         worksheet = spreadsheet.sheet1
-        data = worksheet.get_all_values()
+        data = _retry_on_quota(lambda: worksheet.get_all_values())
 
         if len(data) < 1:
             return None, "Sheet is empty"
@@ -112,9 +136,9 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
     Returns (rows_added, error_message, rows_updated, duplicates_skipped).
     """
     try:
-        spreadsheet = get_sheet_by_id(sheet_id)
+        spreadsheet, sheet_err = get_sheet_by_id(sheet_id)
         if spreadsheet is None:
-            return 0, "Sheet not found", 0, 0
+            return 0, sheet_err, 0, 0
 
         worksheet = spreadsheet.sheet1
 
@@ -140,7 +164,7 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         df_ordered = df_ordered[existing_headers]
 
         # Get existing data
-        existing_data = worksheet.get_all_values()
+        existing_data = _retry_on_quota(lambda: worksheet.get_all_values())
 
         # Find key column indices (Order ID + SKU identifier)
         order_id_idx = existing_headers.index('Order ID') if 'Order ID' in existing_headers else None
@@ -199,21 +223,23 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         # Perform batch updates (all at once to avoid rate limits)
         rows_updated = 0
         if updates:
-            # Use gspread's batch_update with proper range format
             batch_data = []
             for row_num, row_data in updates:
-                # Just specify starting cell - gspread will infer the range from values
                 batch_data.append({
                     'range': f'A{row_num}',
                     'values': [row_data]
                 })
-            worksheet.batch_update(batch_data, value_input_option='USER_ENTERED')
+            _retry_on_quota(
+                lambda: worksheet.batch_update(batch_data, value_input_option='USER_ENTERED')
+            )
             rows_updated = len(updates)
 
         # Append new rows (also batched)
         rows_added = 0
         if new_rows:
-            worksheet.append_rows(new_rows, value_input_option='USER_ENTERED')
+            _retry_on_quota(
+                lambda: worksheet.append_rows(new_rows, value_input_option='USER_ENTERED')
+            )
             rows_added = len(new_rows)
 
         return rows_added, None, rows_updated, duplicates_skipped
@@ -230,7 +256,9 @@ def list_sheets_in_folder() -> List[Dict]:
     try:
         client = get_client()
 
-        files = client.list_spreadsheet_files(folder_id=config.DRIVE_FOLDER_ID)
+        files = _retry_on_quota(
+            lambda: client.list_spreadsheet_files(folder_id=config.DRIVE_FOLDER_ID)
+        )
 
         return [
             {
@@ -262,11 +290,13 @@ def delete_sheet(sheet_id: str) -> Tuple[bool, Optional[str]]:
 def get_sheet_row_count(sheet_id: str) -> int:
     """Get the number of data rows in a sheet (excluding header)."""
     try:
-        spreadsheet = get_sheet_by_id(sheet_id)
+        spreadsheet, _ = get_sheet_by_id(sheet_id)
         if spreadsheet is None:
             return 0
         worksheet = spreadsheet.sheet1
-        return max(0, len(worksheet.get_all_values()) - 1)
+        # Use col_values(1) instead of get_all_values() — fetches only column A,
+        # much lighter on the API quota.
+        return max(0, len(worksheet.col_values(1)) - 1)
     except:
         return 0
 
@@ -276,30 +306,26 @@ CONFIG_SHEET_NAME = "_DataCenterConfig"
 
 
 def _get_or_create_config_sheet() -> gspread.Spreadsheet:
-    """Get the config sheet, creating it if it doesn't exist."""
+    """Get the config sheet using the ID from config.
+    Falls back to creating a new one only if the configured sheet is gone."""
+    global _cached_config_sheet_id
     client = get_client()
 
-    # Try to find existing config sheet in the folder
-    try:
-        files = client.list_spreadsheet_files(
-            title=CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID
-        )
-        # If multiple config sheets exist (from past bug), pick the one with data
-        if len(files) == 1:
-            return client.open_by_key(files[0]['id'])
-        elif len(files) > 1:
-            for f in files:
-                sp = client.open_by_key(f['id'])
-                data = sp.sheet1.get_all_values()
-                if len(data) > 1:  # Has data beyond header
-                    return sp
-            # All empty — just use the first one
-            return client.open_by_key(files[0]['id'])
-    except Exception as e:
-        print(f"Error finding config sheet: {e}")
+    # Use configured or cached ID — no Drive search needed
+    sheet_id = _cached_config_sheet_id or config.CONFIG_SHEET_ID
+    if sheet_id:
+        try:
+            sp = _retry_on_quota(lambda: client.open_by_key(sheet_id))
+            _cached_config_sheet_id = sheet_id
+            return sp
+        except gspread.exceptions.SpreadsheetNotFound:
+            _cached_config_sheet_id = None  # ID is stale
 
-    # Create new config sheet
-    spreadsheet = client.create(CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID)
+    # Config sheet doesn't exist — create one
+    spreadsheet = _retry_on_quota(
+        lambda: client.create(CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID)
+    )
+    _cached_config_sheet_id = spreadsheet.id
 
     # Set up brands worksheet
     worksheet = spreadsheet.sheet1
@@ -318,7 +344,7 @@ def load_brands_from_sheet() -> Dict:
     try:
         spreadsheet = _get_or_create_config_sheet()
         worksheet = spreadsheet.sheet1
-        data = worksheet.get_all_values()
+        data = _retry_on_quota(lambda: worksheet.get_all_values())
 
         if len(data) <= 1:
             return {}

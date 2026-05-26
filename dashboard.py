@@ -160,9 +160,12 @@ def show_admin_panel():
                         if data.get('sheet_url'):
                             st.write(f"[Open Google Sheet]({data.get('sheet_url')})")
 
-                        # Row count
-                        row_count = sheets_manager.get_sheet_row_count(data.get('sheet_id', ''))
-                        st.write(f"**Data Rows:** {row_count:,}")
+                        # Row count — fetch on demand to avoid API quota issues
+                        rc_key = f"row_count_{brand_name}"
+                        if st.button("Check Row Count", key=f"rc_btn_{brand_name}"):
+                            st.session_state[rc_key] = sheets_manager.get_sheet_row_count(data.get('sheet_id', ''))
+                        if rc_key in st.session_state:
+                            st.write(f"**Data Rows:** {st.session_state[rc_key]:,}")
 
                     with col2:
                         if st.button("Reset Password", key=f"reset_{brand_name}"):

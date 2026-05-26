@@ -164,9 +164,9 @@ def import_existing_sheet(brand_name: str, sheet_id: str) -> Tuple[Optional[Dict
         return None, f"Brand '{brand_name}' already exists"
 
     # Verify the sheet exists and is accessible
-    spreadsheet = sheets_manager.get_sheet_by_id(sheet_id)
+    spreadsheet, sheet_err = sheets_manager.get_sheet_by_id(sheet_id)
     if spreadsheet is None:
-        return None, "Sheet not found or not accessible. Make sure it's shared with the service account."
+        return None, f"Sheet not accessible: {sheet_err}. Make sure it's shared with the service account."
 
     # Generate password with brand name
     password = generate_password(brand_name)

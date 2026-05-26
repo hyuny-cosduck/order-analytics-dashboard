@@ -46,6 +46,10 @@ DRIVE_FOLDER_ID = _get_secret("DRIVE_FOLDER_ID", "1RjrHjI7ZRWmRQHJU6cWZbfgy7Z0G8
 # Admin credentials (password only) - use secrets in production
 ADMIN_PASSWORD = _get_secret("ADMIN_PASSWORD", os.environ.get("ADMIN_PASSWORD", "phozphoz1!"))
 
+# Config sheet ID — the single _DataCenterConfig sheet that stores brand data.
+# Setting this avoids a Drive search on every page load.
+CONFIG_SHEET_ID = _get_secret("CONFIG_SHEET_ID", "1F_zmxbIkIEBAEA8Nw09_KydXp7DQXgeyhOmtET1z_n0")
+
 # Brand passwords will be stored in a brands.json file managed by the app
 BRANDS_FILE = os.path.join(os.path.dirname(__file__), "brands.json")
 
