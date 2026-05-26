@@ -36,11 +36,16 @@ def parse_created_time(series: pd.Series) -> pd.Series:
     return dt
 
 
+CURRENCY_SYMBOLS = {"Rp": "Rp", "USD": "$", "KRW": "₩"}
+CURRENCY_OPTIONS = list(CURRENCY_SYMBOLS.keys())
+
+
 def fmt_money(value, currency="Rp"):
     """Format a monetary value with the given currency symbol."""
     if pd.isna(value):
         return "-"
-    return f"{currency} {value:,.0f}"
+    symbol = CURRENCY_SYMBOLS.get(currency, currency)
+    return f"{symbol} {value:,.0f}"
 
 
 # ===== Session State Initialization =====
@@ -211,7 +216,7 @@ def show_admin_panel():
         st.caption("This will create a new Google Sheet for the brand automatically.")
 
         new_brand_name = st.text_input("Brand Name", placeholder="e.g., BEPLAIN")
-        new_brand_currency = st.selectbox("Currency", ["Rp", "$"], index=0, key="new_brand_currency")
+        new_brand_currency = st.selectbox("Currency", CURRENCY_OPTIONS, index=0, key="new_brand_currency")
 
         if st.button("Create Brand", type="primary"):
             if new_brand_name:
@@ -242,7 +247,7 @@ def show_admin_panel():
             placeholder="e.g., 1sGARLhKbDMMLm9V4XkSl0xBt9tcCXpZXIM4R8o9F95U",
             help="The ID from the Google Sheet URL: docs.google.com/spreadsheets/d/[SHEET_ID]/edit"
         )
-        import_currency = st.selectbox("Currency", ["Rp", "$"], index=0, key="import_currency")
+        import_currency = st.selectbox("Currency", CURRENCY_OPTIONS, index=0, key="import_currency")
 
         if st.button("Import Sheet", type="primary"):
             if import_brand_name and import_sheet_id:
