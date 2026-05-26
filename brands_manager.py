@@ -59,7 +59,7 @@ def authenticate_admin(password: str) -> bool:
     return password == config.ADMIN_PASSWORD
 
 
-def add_brand(brand_name: str) -> Tuple[Optional[Dict], Optional[str]]:
+def add_brand(brand_name: str, currency: str = "Rp") -> Tuple[Optional[Dict], Optional[str]]:
     """
     Add a new brand - creates Google Sheet and stores credentials.
     Returns (brand_data, error_message).
@@ -83,7 +83,8 @@ def add_brand(brand_name: str) -> Tuple[Optional[Dict], Optional[str]]:
     brand_data = {
         'sheet_id': sheet_id,
         'sheet_url': sheet_url,
-        'password': password
+        'password': password,
+        'currency': currency,
     }
 
     brands[brand_name] = brand_data
@@ -152,7 +153,7 @@ def delete_brand(brand_name: str, delete_sheet: bool = False) -> Tuple[bool, Opt
     return True, None
 
 
-def import_existing_sheet(brand_name: str, sheet_id: str) -> Tuple[Optional[Dict], Optional[str]]:
+def import_existing_sheet(brand_name: str, sheet_id: str, currency: str = "Rp") -> Tuple[Optional[Dict], Optional[str]]:
     """
     Import an existing Google Sheet for a brand.
     Returns (brand_data, error_message).
@@ -175,7 +176,8 @@ def import_existing_sheet(brand_name: str, sheet_id: str) -> Tuple[Optional[Dict
     brand_data = {
         'sheet_id': sheet_id,
         'sheet_url': f"https://docs.google.com/spreadsheets/d/{sheet_id}",
-        'password': password
+        'password': password,
+        'currency': currency,
     }
 
     brands[brand_name] = brand_data

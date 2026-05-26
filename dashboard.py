@@ -35,6 +35,14 @@ def parse_created_time(series: pd.Series) -> pd.Series:
         dt.loc[mask] = fallback
     return dt
 
+
+def fmt_money(value, currency="Rp"):
+    """Format a monetary value with the given currency symbol."""
+    if pd.isna(value):
+        return "-"
+    return f"{currency} {value:,.0f}"
+
+
 # ===== Session State Initialization =====
 if 'authenticated' not in st.session_state:
     st.session_state.authenticated = False
@@ -203,11 +211,12 @@ def show_admin_panel():
         st.caption("This will create a new Google Sheet for the brand automatically.")
 
         new_brand_name = st.text_input("Brand Name", placeholder="e.g., BEPLAIN")
+        new_brand_currency = st.selectbox("Currency", ["Rp", "$"], index=0, key="new_brand_currency")
 
         if st.button("Create Brand", type="primary"):
             if new_brand_name:
                 with st.spinner("Creating brand and Google Sheet..."):
-                    brand_data, error = brands_manager.add_brand(new_brand_name)
+                    brand_data, error = brands_manager.add_brand(new_brand_name, currency=new_brand_currency)
                     if error:
                         st.error(error)
                     else:
@@ -233,11 +242,12 @@ def show_admin_panel():
             placeholder="e.g., 1sGARLhKbDMMLm9V4XkSl0xBt9tcCXpZXIM4R8o9F95U",
             help="The ID from the Google Sheet URL: docs.google.com/spreadsheets/d/[SHEET_ID]/edit"
         )
+        import_currency = st.selectbox("Currency", ["Rp", "$"], index=0, key="import_currency")
 
         if st.button("Import Sheet", type="primary"):
             if import_brand_name and import_sheet_id:
                 with st.spinner("Importing sheet..."):
-                    brand_data, error = brands_manager.import_existing_sheet(import_brand_name, import_sheet_id)
+                    brand_data, error = brands_manager.import_existing_sheet(import_brand_name, import_sheet_id, currency=import_currency)
                     if error:
                         st.error(error)
                     else:
@@ -258,6 +268,7 @@ def show_brand_dashboard():
     brand_name = st.session_state.brand_name
     brand_data = st.session_state.brand_data
     sheet_id = brand_data.get('sheet_id')
+    currency = brand_data.get('currency', 'Rp')
 
     # Header
     col1, col2 = st.columns([4, 1])
@@ -273,16 +284,16 @@ def show_brand_dashboard():
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
 
     with tab1:
-        show_dashboard_content(sheet_id)
+        show_dashboard_content(sheet_id, currency)
 
     with tab2:
-        show_bundle_analysis(sheet_id)
+        show_bundle_analysis(sheet_id, currency)
 
     with tab3:
         show_upload_section(sheet_id, brand_name)
 
 
-def show_bundle_analysis(sheet_id: str):
+def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
     """번들 SKU별 구매/취소 분석"""
     st.subheader("📦 번들 SKU 분석")
     st.caption("BDL_BEPLAIN 번들 상품의 구매/취소 현황을 분석합니다.")
@@ -469,7 +480,7 @@ def show_bundle_analysis(sheet_id: str):
 
     with st.expander("📋 번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
         display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체 주문(order ID)', '전체 주문(quantity)', '취소 주문(order ID)', '취소 주문(quantity)', '취소율(%)']].copy()
-        display_df['단가'] = display_df['단가'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) and x > 0 else "-")
+        display_df['단가'] = display_df['단가'].apply(lambda x: fmt_money(x, currency) if pd.notna(x) and x > 0 else "-")
         st.dataframe(display_df, use_container_width=True, hide_index=True)
 
     st.markdown("---")
@@ -565,7 +576,7 @@ def show_bundle_analysis(sheet_id: str):
 
     with st.expander("📋 번들 유형별 상세 데이터"):
         type_display = type_stats.copy()
-        type_display['평균가격'] = type_display['평균가격'].apply(lambda x: f"Rp {x:,.0f}" if pd.notna(x) else "-")
+        type_display['평균가격'] = type_display['평균가격'].apply(lambda x: fmt_money(x, currency) if pd.notna(x) else "-")
         st.dataframe(type_display, use_container_width=True)
 
     st.markdown("---")
@@ -655,7 +666,7 @@ def show_upload_section(sheet_id: str, brand_name: str):
             st.error(f"Error reading file: {str(e)}")
 
 
-def show_dashboard_content(sheet_id: str):
+def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     # Refresh button
     col_refresh, col_info = st.columns([1, 4])
     with col_refresh:
@@ -811,11 +822,11 @@ def show_dashboard_content(sheet_id: str):
     with col1:
         st.metric(label="총 주문 수", value=f"{total_orders:,}건")
     with col2:
-        st.metric(label="총 주문 금액", value=f"Rp {total_amount:,.0f}")
+        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency))
     with col3:
         st.metric(label="취소 주문 수", value=f"{cancel_count:,}건", delta=f"{cancel_rate:.1f}%", delta_color="inverse")
     with col4:
-        st.metric(label="취소 금액", value=f"Rp {cancel_amount:,.0f}")
+        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency))
 
     st.markdown("---")
 
@@ -882,8 +893,8 @@ def show_dashboard_content(sheet_id: str):
 
     with st.expander("📋 날짜별 상세 데이터"):
         daily_display = daily_summary.copy()
-        daily_display['전체매출'] = daily_display['전체매출'].apply(lambda x: f"Rp {x:,.0f}")
-        daily_display['취소매출'] = daily_display['취소매출'].apply(lambda x: f"Rp {x:,.0f}")
+        daily_display['전체매출'] = daily_display['전체매출'].apply(lambda x: fmt_money(x, currency))
+        daily_display['취소매출'] = daily_display['취소매출'].apply(lambda x: fmt_money(x, currency))
         st.dataframe(daily_display, use_container_width=True)
 
     st.markdown("---")
@@ -1003,8 +1014,8 @@ def show_dashboard_content(sheet_id: str):
             st.plotly_chart(fig_ship, use_container_width=True)
 
         with col2:
-            st.metric("출고 후 취소", f"{len(shipped):,}건", f"Rp {shipped['Order Amount'].sum():,.0f}")
-            st.metric("미출고 취소", f"{len(not_shipped):,}건", f"Rp {not_shipped['Order Amount'].sum():,.0f}")
+            st.metric("출고 후 취소", f"{len(shipped):,}건", fmt_money(shipped['Order Amount'].sum(), currency))
+            st.metric("미출고 취소", f"{len(not_shipped):,}건", fmt_money(not_shipped['Order Amount'].sum(), currency))
 
         with col3:
             if len(shipped) > 0 and 'Cancel Reason' in canceled_orders_detail.columns:
@@ -1073,7 +1084,7 @@ def show_dashboard_content(sheet_id: str):
 
         with st.expander("📋 Payment Method별 상세 데이터"):
             payment_display = payment_df.copy()
-            payment_display['전체매출'] = payment_display['전체매출'].apply(lambda x: f"Rp {x:,.0f}")
+            payment_display['전체매출'] = payment_display['전체매출'].apply(lambda x: fmt_money(x, currency))
             st.dataframe(payment_display, use_container_width=True)
 
     # Footer

@@ -355,7 +355,8 @@ def load_brands_from_sheet() -> Dict:
                 brands[row[0]] = {
                     'sheet_id': row[1],
                     'sheet_url': row[2],
-                    'password': row[3]
+                    'password': row[3],
+                    'currency': row[4] if len(row) >= 5 and row[4] else 'Rp',
                 }
         return brands
     except Exception as e:
@@ -373,7 +374,7 @@ def save_brands_to_sheet(brands: Dict) -> bool:
         worksheet.clear()
 
         # Write header
-        worksheet.update('A1', [["brand_name", "sheet_id", "sheet_url", "password"]])
+        worksheet.update('A1', [["brand_name", "sheet_id", "sheet_url", "password", "currency"]])
 
         # Write brand data
         if brands:
@@ -383,7 +384,8 @@ def save_brands_to_sheet(brands: Dict) -> bool:
                     name,
                     data.get('sheet_id', ''),
                     data.get('sheet_url', ''),
-                    data.get('password', '')
+                    data.get('password', ''),
+                    data.get('currency', 'Rp'),
                 ])
             if rows:
                 worksheet.update('A2', rows)
