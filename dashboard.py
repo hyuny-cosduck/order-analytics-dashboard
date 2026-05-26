@@ -328,6 +328,9 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
     bundle_df['Order Amount'] = pd.to_numeric(bundle_df['Order Amount'], errors='coerce')
     bundle_df['Quantity'] = pd.to_numeric(bundle_df['Quantity'], errors='coerce')
 
+    # Exclude samples (Order Amount = 0)
+    bundle_df = bundle_df[bundle_df['Order Amount'] > 0].copy()
+
     if 'Created Time' in bundle_df.columns:
         bundle_df['Created Date'] = parse_created_time(bundle_df['Created Time']).dt.date
 
@@ -697,12 +700,20 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     if 'Quantity' in df.columns:
         df['Quantity'] = pd.to_numeric(df['Quantity'], errors='coerce')
 
+    # Separate samples (Order Amount = 0, e.g. creator samples) from real sales
+    samples_df = df[df['Order Amount'] == 0].copy() if 'Order Amount' in df.columns else pd.DataFrame()
+    if len(samples_df) > 0:
+        df = df[df['Order Amount'] > 0].copy()
+
     # Date conversion
     if 'Created Time' in df.columns:
         df['Created Date'] = parse_created_time(df['Created Time']).dt.date
+        if len(samples_df) > 0:
+            samples_df['Created Date'] = parse_created_time(samples_df['Created Time']).dt.date
 
     with col_info:
-        st.caption(f"전체 데이터: {len(df):,}행")
+        sample_note = f" | 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
+        st.caption(f"전체 데이터: {len(df):,}행{sample_note}")
 
     # Check for valid dates
     if 'Created Date' not in df.columns:
@@ -796,8 +807,11 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     # Apply date filter
     df = df[(df['Created Date'] >= start_date) & (df['Created Date'] <= end_date)]
+    if len(samples_df) > 0 and 'Created Date' in samples_df.columns:
+        samples_df = samples_df[(samples_df['Created Date'] >= start_date) & (samples_df['Created Date'] <= end_date)]
 
-    st.info(f"📊 선택된 기간: **{start_date}** ~ **{end_date}** ({len(df):,}행)")
+    sample_info = f" | 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
+    st.info(f"📊 선택된 기간: **{start_date}** ~ **{end_date}** ({len(df):,}행{sample_info})")
     st.markdown("---")
 
     # Order-level aggregation
@@ -830,6 +844,21 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.metric(label="취소 주문 수", value=f"{cancel_count:,}건", delta=f"{cancel_rate:.1f}%", delta_color="inverse")
     with col4:
         st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency))
+
+    # ===== Sample/Creator Orders =====
+    if len(samples_df) > 0:
+        sample_orders = samples_df['Order ID'].nunique()
+        sample_qty = int(samples_df['Quantity'].sum()) if 'Quantity' in samples_df.columns else 0
+        with st.expander(f"🎁 샘플 (크리에이터 발송): {sample_orders:,}건 / {sample_qty:,}개"):
+            if 'Seller SKU' in samples_df.columns:
+                sample_sku = samples_df.groupby('Seller SKU').agg({
+                    'Order ID': 'nunique',
+                    'Quantity': 'sum',
+                    'Product Name': 'first',
+                }).reset_index()
+                sample_sku.columns = ['SKU', '주문수', '수량', 'Product Name']
+                sample_sku = sample_sku.sort_values('수량', ascending=False)
+                st.dataframe(sample_sku, use_container_width=True, hide_index=True)
 
     st.markdown("---")
 
