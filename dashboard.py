@@ -409,7 +409,8 @@ def show_brand_dashboard():
     brand_name = st.session_state.brand_name
     brand_data = st.session_state.brand_data
     if not brand_data:
-        logout()
+        st.session_state.authenticated = False
+        st.rerun()
         return
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
@@ -1269,11 +1270,10 @@ if st.session_state.authenticated:
     elif st.session_state.brand_data:
         show_brand_dashboard()
     else:
-        # Stale session — force re-login
-        logout()
+        st.session_state.authenticated = False
+        st.rerun()
 else:
     if is_admin_route():
         show_admin_login_page()
     else:
         show_brand_login_page()
-    show_brand_dashboard()
