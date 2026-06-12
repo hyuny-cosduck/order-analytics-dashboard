@@ -1061,7 +1061,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     st.subheader("📅 기간 선택")
 
-    col_month, col_range, col_qlabel, col_q1, col_q2, col_q3, col_q4 = st.columns([1.5, 2.5, 0.8, 0.6, 0.6, 0.6, 0.6])
+    col_month, col_range, col_q1, col_q2, col_q3, col_q4 = st.columns([2, 3, 1, 1, 1, 1])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
@@ -1107,8 +1107,6 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.session_state['_pending_main_range'] = (start, end)
         st.rerun()
 
-    with col_qlabel:
-        st.text("빠른 선택")
     with col_q1:
         if st.button("7일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=6), max_date)
