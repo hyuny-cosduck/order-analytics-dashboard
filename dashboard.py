@@ -1359,25 +1359,29 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             show_prev_pie = st.toggle("비교", value=False, key="cmp_status_pie") if has_prev else False
 
         if show_prev_pie:
-            fig_status = make_subplots(
-                rows=1, cols=2, specs=[[{"type": "pie"}, {"type": "pie"}]],
-                subplot_titles=["현재", "이전"],
-                column_widths=[0.55, 0.45],
-            )
+            fig_status = go.Figure()
+            # Main donut (right side, bigger)
             fig_status.add_trace(go.Pie(
                 labels=status_dist['Order Status'], values=status_dist['Count'],
                 hole=0.4, textposition='inside', textinfo='percent+label',
                 marker=dict(colors=[color_map.get(s, '#ccc') for s in status_dist['Order Status']]),
-                showlegend=False,
-            ), row=1, col=1)
+                showlegend=True, name='현재',
+                domain=dict(x=[0.3, 1.0], y=[0.0, 1.0]),
+            ))
+            # Previous donut (left-bottom, smaller)
             fig_status.add_trace(go.Pie(
                 labels=prev_status['Order Status'], values=prev_status['Count'],
-                hole=0.4, textposition='inside', textinfo='percent+label',
+                hole=0.4, textposition='inside', textinfo='percent',
                 marker=dict(colors=[color_map.get(s, '#ccc') for s in prev_status['Order Status']]),
-                showlegend=False,
-            ), row=1, col=2)
-            fig_status.update_annotations(font_size=11, font_color="#64648c")
-            fig_status.update_layout(height=300, margin=dict(t=30, b=10, l=0, r=0))
+                showlegend=False, name='이전',
+                domain=dict(x=[0.0, 0.35], y=[0.05, 0.65]),
+            ))
+            fig_status.add_annotation(x=0.175, y=0.0, text="이전", showarrow=False,
+                                      font=dict(size=11, color="#64648c"))
+            fig_status.update_layout(
+                height=320, margin=dict(t=10, b=25, l=0, r=0),
+                legend=dict(orientation='h', yanchor='bottom', y=-0.1, xanchor='center', x=0.65),
+            )
         else:
             fig_status = px.pie(
                 status_dist, values='Count', names='Order Status', hole=0.4,
