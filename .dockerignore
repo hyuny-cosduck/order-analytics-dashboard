@@ -1,0 +1,11 @@
+.git
+__pycache__
+*.xlsx
+*.xls
+*.csv
+.env
+data-center-dashboard*.json
+brands.json
+.streamlit/secrets.toml
+.DS_Store
+*.py[cod]
