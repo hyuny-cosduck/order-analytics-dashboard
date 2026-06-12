@@ -449,6 +449,15 @@ def show_brand_dashboard():
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
+    # Preload data count for header
+    _df_preview, _err = load_sheet_data(sheet_id)
+    if _df_preview is not None and not _err:
+        _total = len(_df_preview[_df_preview.get('Order Amount', 0).apply(pd.to_numeric, errors='coerce') > 0]) if 'Order Amount' in _df_preview.columns else len(_df_preview)
+        _samples = len(_df_preview[_df_preview.get('Order Amount', 0).apply(pd.to_numeric, errors='coerce') == 0]) if 'Order Amount' in _df_preview.columns else 0
+        _data_info = f"{_total:,}행" + (f" · 샘플 {_samples:,}건" if _samples > 0 else "")
+    else:
+        _data_info = ""
+
     # Fixed header (title + logout + tabs — all pure HTML)
     st.markdown(f"""
     <style>
@@ -467,12 +476,12 @@ def show_brand_dashboard():
         font-family: 'Inter', sans-serif; font-weight: 700;
         font-size: 1.25rem; color: #1e1e2e; margin: 0;
     }}
-    .brand-header .logout-link {{
-        padding: 6px 16px; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+    .brand-header .logout-link, .brand-header .refresh-link {{
+        padding: 5px 14px; font-size: 0.8rem; font-family: 'Inter', sans-serif;
         color: #1e1e2e; background: white; border: 1px solid #e2e2ea;
-        border-radius: 8px; cursor: pointer; text-decoration: none;
+        border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: 500;
     }}
-    .brand-header .logout-link:hover {{ background: #f4f4f8; }}
+    .brand-header .logout-link:hover, .brand-header .refresh-link:hover {{ background: #f4f4f8; }}
     .brand-header-tabs {{
         display: flex; gap: 0; padding: 0 2rem;
         border-bottom: 1px solid #e2e2ea;
@@ -500,6 +509,10 @@ def show_brand_dashboard():
             <a class="htab active" data-tab="0">📈 Dashboard</a>
             <a class="htab" data-tab="1">📦 번들 분석</a>
             <a class="htab" data-tab="2">📤 Upload Data</a>
+            <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
+                <a class="refresh-link" id="refresh-link">↻ 새로고침</a>
+                <span style="font-size:0.75rem; color:#8888a0; font-family:'Inter',sans-serif;">{_data_info}</span>
+            </div>
         </nav>
     </div>
     <script>
@@ -523,7 +536,7 @@ def show_brand_dashboard():
                 tab.classList.add('active');
             }});
         }});
-        // Logout — find and click the hidden Streamlit logout button
+        // Logout — find and click hidden Streamlit button
         const logoutLink = document.getElementById('logout-link');
         if (logoutLink) {{
             logoutLink.addEventListener('click', () => {{
@@ -533,17 +546,35 @@ def show_brand_dashboard():
                 }}
             }});
         }}
+        // Refresh — find and click hidden Streamlit button
+        const refreshLink = document.getElementById('refresh-link');
+        if (refreshLink) {{
+            refreshLink.addEventListener('click', () => {{
+                const buttons = document.querySelectorAll('button');
+                for (const btn of buttons) {{
+                    if (btn.textContent.trim() === 'Refresh') {{ btn.click(); return; }}
+                }}
+            }});
+        }}
     }})();
     </script>
     """, unsafe_allow_html=True)
 
-    # Hidden logout button (off-screen, clicked by JS from fixed header)
-    st.markdown('<div id="hidden-logout-wrap">', unsafe_allow_html=True)
+    # Hidden Streamlit buttons (positioned off-screen, triggered by JS)
+    st.markdown("""<style>
+    .hidden-controls { position: absolute; left: -9999px; height: 0; overflow: hidden; }
+    </style><div class="hidden-controls">""", unsafe_allow_html=True)
     if st.button("Logout", key="hidden_logout"):
         logout()
-    st.markdown('</div>', unsafe_allow_html=True)
+    if st.button("Refresh", key="hidden_refresh"):
+        st.cache_data.clear()
+        for key in list(st.session_state.keys()):
+            if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
+                del st.session_state[key]
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # Hidden Streamlit tabs (visually hidden, controlled by JS)
+    # Streamlit tabs (tab-list hidden by CSS, controlled by HTML header tabs)
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
 
     with tab1:
@@ -979,15 +1010,6 @@ def show_upload_section(sheet_id: str, brand_name: str):
 
 
 def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
-    # Refresh button — compact inline
-    col_refresh, col_spacer = st.columns([1, 6])
-    with col_refresh:
-        if st.button("↻ 새로고침", type="secondary"):
-            st.cache_data.clear()
-            for key in list(st.session_state.keys()):
-                if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
-                    del st.session_state[key]
-            st.rerun()
 
     with st.spinner("데이터를 불러오는 중..."):
         df, error = load_sheet_data(sheet_id)
@@ -1020,9 +1042,6 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         if len(samples_df) > 0:
             samples_df['Created Date'] = parse_created_time(samples_df['Created Time']).dt.date
 
-    with col_spacer:
-        sample_note = f" · 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
-        st.caption(f"전체 {len(df):,}행{sample_note}")
 
     # Check for valid dates
     if 'Created Date' not in df.columns:
