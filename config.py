@@ -50,17 +50,13 @@ def get_service_account_info():
 
 # Folder where all brand sheets are stored
 # Only this folder will be accessed - no other files/folders will be touched
-DRIVE_FOLDER_ID = _get_secret("DRIVE_FOLDER_ID")
+DRIVE_FOLDER_ID = _get_secret("DRIVE_FOLDER_ID", "1RjrHjI7ZRWmRQHJU6cWZbfgy7Z0G8Rv7")
 
-# Admin credentials (password only) - MUST be set via env var or secrets
+# Admin credentials (password only) - MUST be set via env var or secrets in production
 ADMIN_PASSWORD = _get_secret("ADMIN_PASSWORD")
-if not ADMIN_PASSWORD:
-    import warnings
-    warnings.warn("ADMIN_PASSWORD is not set — admin login will be disabled")
 
 # Config sheet ID — the single _DataCenterConfig sheet that stores brand data.
-# Setting this avoids a Drive search on every page load.
-CONFIG_SHEET_ID = _get_secret("CONFIG_SHEET_ID")
+CONFIG_SHEET_ID = _get_secret("CONFIG_SHEET_ID", "1F_zmxbIkIEBAEA8Nw09_KydXp7DQXgeyhOmtET1z_n0")
 
 # Brand passwords will be stored in a brands.json file managed by the app
 BRANDS_FILE = os.path.join(os.path.dirname(__file__), "brands.json")
