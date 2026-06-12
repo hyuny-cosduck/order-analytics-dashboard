@@ -151,25 +151,25 @@ def show_brand_login_page():
         <div style="text-align: center; margin-bottom: 2rem;">
             <h2 style="font-family: 'Inter', sans-serif; font-weight: 600;
                        font-size: 1.35rem; color: #1e1e2e; margin: 0 0 0.3rem 0;">
-                Order Analytics
+                주문 분석
             </h2>
             <p style="font-family: 'Inter', sans-serif; font-weight: 400;
                       font-size: 0.85rem; color: #8888a0; margin: 0;">
-                Sign in to your brand dashboard
+                브랜드 대시보드에 로그인하세요
             </p>
         </div>
         """, unsafe_allow_html=True)
 
         with st.form("brand_login_form"):
-            brand_name = st.text_input("Brand Name", placeholder="Enter your brand name")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            brand_name = st.text_input("브랜드명", placeholder="브랜드명을 입력하세요")
+            password = st.text_input("비밀번호", type="password", placeholder="비밀번호를 입력하세요")
             st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+            submitted = st.form_submit_button("로그인", type="primary", use_container_width=True)
 
         if submitted:
             if brand_name and password:
                 if brands_manager.is_brand_rate_limited(brand_name):
-                    st.error("Too many failed attempts. Try again later.")
+                    st.error("로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도하세요.")
                 else:
                     brand_data = brands_manager.authenticate_brand(brand_name, password)
                     if brand_data:
@@ -179,14 +179,14 @@ def show_brand_login_page():
                         st.session_state.brand_data = brand_data
                         st.rerun()
                     else:
-                        st.error("Invalid brand name or password")
+                        st.error("브랜드명 또는 비밀번호가 올바르지 않습니다")
             else:
-                st.warning("Enter brand name and password")
+                st.warning("브랜드명과 비밀번호를 입력하세요")
 
         st.markdown("""
         <p style="text-align: center; font-family: 'Inter', sans-serif; font-size: 0.75rem;
                   color: #b0b0c0; margin-top: 1.5rem;">
-            Cosduck Global Team
+            Cosduck
         </p>
         """, unsafe_allow_html=True)
 
@@ -203,37 +203,37 @@ def show_admin_login_page():
         <div style="text-align: center; margin-bottom: 2rem;">
             <h2 style="font-family: 'Inter', sans-serif; font-weight: 600;
                        font-size: 1.35rem; color: #1e1e2e; margin: 0 0 0.3rem 0;">
-                Admin Panel
+                관리자
             </h2>
             <p style="font-family: 'Inter', sans-serif; font-weight: 400;
                       font-size: 0.85rem; color: #8888a0; margin: 0;">
-                Enter your password to continue
+                비밀번호를 입력하세요
             </p>
         </div>
         """, unsafe_allow_html=True)
 
         with st.form("admin_login_form"):
-            password = st.text_input("Password", type="password", placeholder="Enter admin password")
+            password = st.text_input("비밀번호", type="password", placeholder="관리자 비밀번호를 입력하세요")
             st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
+            submitted = st.form_submit_button("로그인", type="primary", use_container_width=True)
 
         if submitted:
             if password:
                 if brands_manager.is_admin_rate_limited():
-                    st.error("Too many failed attempts. Try again later.")
+                    st.error("로그인 시도 횟수를 초과했습니다. 잠시 후 다시 시도하세요.")
                 elif brands_manager.authenticate_admin(password):
                     st.session_state.authenticated = True
                     st.session_state.is_admin = True
                     st.rerun()
                 else:
-                    st.error("Invalid password")
+                    st.error("비밀번호가 올바르지 않습니다")
             else:
-                st.warning("Enter password")
+                st.warning("비밀번호를 입력하세요")
 
         st.markdown("""
         <p style="text-align: center; font-family: 'Inter', sans-serif; font-size: 0.75rem;
                   color: #b0b0c0; margin-top: 1.5rem;">
-            Cosduck Global Team
+            Cosduck
         </p>
         """, unsafe_allow_html=True)
 
