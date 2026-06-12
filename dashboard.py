@@ -88,13 +88,21 @@ def is_admin_route():
 def _inject_global_styles():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
     header[data-testid="stHeader"] { background: #f4f4f8 !important; }
 
+    /* Typography */
+    h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.6rem !important; }
+    h2 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 1.15rem !important; }
+    h3 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 1rem !important; }
+    p, span, label, div { font-family: 'Inter', sans-serif; }
+
     /* Inputs */
-    .stTextInput > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
+    .stTextInput > label, .stSelectbox > label, .stDateInput label, .stFileUploader > label {
+        font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important;
+    }
     .stTextInput > div > div > input {
         border: 1px solid #e2e2ea !important; border-radius: 8px !important;
         padding: 0.7rem 0.85rem !important; font-size: 0.9rem !important;
@@ -105,17 +113,16 @@ def _inject_global_styles():
         box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
     }
     .stTextInput > div > div > input::placeholder { color: #b0b0c0 !important; }
-    .stSelectbox > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
     .stSelectbox > div > div { color: #1e1e2e !important; }
     .stSelectbox [data-baseweb="select"] > div { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; }
     .stDateInput > div > div > input { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; color: #1e1e2e !important; font-weight: 500 !important; }
     .stDateInput [data-baseweb="input"] { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; }
     .stDateInput [data-baseweb="input"] div { color: #1e1e2e !important; font-weight: 500 !important; }
-    .stDateInput label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
 
     /* Buttons */
     .stButton > button, .stFormSubmitButton > button {
         border-radius: 8px !important; font-weight: 500 !important; font-size: 0.85rem !important;
+        font-family: 'Inter', sans-serif !important;
     }
     .stButton > button[data-testid="stBaseButton-primary"],
     .stFormSubmitButton > button {
@@ -128,25 +135,52 @@ def _inject_global_styles():
         border: 1px solid #e2e2ea !important;
     }
     .stButton > button[data-testid="stBaseButton-secondary"]:hover {
-        background: #f4f4f8 !important;
+        background: #eeeef6 !important;
     }
 
     /* Tabs */
-    .stTabs [data-baseweb="tab-list"] { gap: 0; border-bottom: 1px solid #e2e2ea; }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0; border-bottom: 1px solid #e2e2ea;
+        background: white; border-radius: 12px 12px 0 0;
+        padding: 0 0.5rem;
+    }
     .stTabs [data-baseweb="tab"] {
+        font-family: 'Inter', sans-serif !important;
         font-size: 0.85rem !important; font-weight: 500 !important;
-        color: #64648c !important; padding: 0.7rem 1.2rem !important;
+        color: #64648c !important; padding: 0.75rem 1.2rem !important;
         border-bottom: 2px solid transparent;
     }
     .stTabs [aria-selected="true"] {
         color: #6366f1 !important; border-bottom: 2px solid #6366f1 !important;
     }
 
+    /* Cards — metric containers, expanders, info boxes */
+    [data-testid="stMetric"] {
+        background: white; border-radius: 12px; padding: 1rem 1.25rem;
+        border: 1px solid #e2e2ea;
+    }
+    [data-testid="stMetric"] label { color: #64648c !important; font-size: 0.8rem !important; font-weight: 500 !important; }
+    [data-testid="stMetric"] [data-testid="stMetricValue"] { color: #1e1e2e !important; font-weight: 700 !important; }
+
     /* Expanders */
-    .streamlit-expanderHeader { font-weight: 500 !important; font-size: 0.9rem !important; }
+    .streamlit-expanderHeader {
+        font-weight: 500 !important; font-size: 0.9rem !important;
+        font-family: 'Inter', sans-serif !important;
+        background: white !important; border-radius: 8px !important;
+    }
+    details { border: 1px solid #e2e2ea !important; border-radius: 8px !important; }
 
     /* Alerts */
-    .stAlert { border-radius: 8px !important; }
+    .stAlert { border-radius: 10px !important; font-family: 'Inter', sans-serif !important; }
+
+    /* DataFrames */
+    [data-testid="stDataFrame"] { border-radius: 8px !important; overflow: hidden; }
+
+    /* Plotly charts */
+    [data-testid="stPlotlyChart"] {
+        background: white; border-radius: 12px; padding: 0.75rem;
+        border: 1px solid #e2e2ea;
+    }
 
     /* Hide anchor links */
     a.stHeaderLink, h1 a, h2 a { display: none !important; }
@@ -161,6 +195,9 @@ def _inject_global_styles():
         background: transparent !important; border-radius: 8px !important;
         box-shadow: none !important;
     }
+
+    /* Caption / footer text */
+    .stCaption, [data-testid="stCaption"] { color: #8888a0 !important; font-family: 'Inter', sans-serif !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -273,15 +310,18 @@ def show_admin_login_page():
 # ===== ADMIN PANEL =====
 def show_admin_panel():
     _inject_global_styles()
-    st.title("Admin Panel")
 
-    col1, col2, col3 = st.columns([4, 1, 1])
+    col1, col2, col3 = st.columns([6, 1, 1])
+    with col1:
+        st.title("Admin Panel")
     with col2:
-        if st.button("🔄 Refresh", type="secondary"):
+        st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
+        if st.button("Refresh", type="secondary", use_container_width=True):
             st.cache_data.clear()
             st.rerun()
     with col3:
-        if st.button("Logout", type="secondary"):
+        st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
+        if st.button("Logout", type="secondary", use_container_width=True):
             logout()
 
     st.markdown("---")
@@ -418,9 +458,13 @@ def show_brand_dashboard():
     currency = brand_data.get('currency', 'Rp')
 
     # Header
-    st.title(f"{brand_name} Order Analytics")
-    if st.button("Logout", type="secondary"):
-        logout()
+    col1, col2 = st.columns([6, 1])
+    with col1:
+        st.title(f"{brand_name} Order Analytics")
+    with col2:
+        st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
+        if st.button("Logout", type="secondary", use_container_width=True):
+            logout()
 
     st.markdown("---")
 
