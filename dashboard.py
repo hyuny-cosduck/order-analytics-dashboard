@@ -1350,29 +1350,31 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.subheader("Order Status 분포")
 
         if len(prev_status) > 0:
-            # Side-by-side: current (big) + previous (small)
-            pie_cur, pie_prev = st.columns([2, 1])
-            with pie_cur:
-                fig_status = px.pie(
-                    status_dist, values='Count', names='Order Status', hole=0.4,
-                    color_discrete_sequence=px.colors.qualitative.Set2
-                )
-                fig_status.update_traces(textposition='inside', textinfo='percent+label')
-                fig_status.update_layout(height=280, showlegend=False, margin=dict(t=5, b=5, l=5, r=5), title=dict(text="현재", font=dict(size=11, color="#64648c"), x=0.5))
-                st.plotly_chart(fig_status, use_container_width=True)
-            with pie_prev:
-                fig_prev_status = px.pie(
-                    prev_status, values='Count', names='Order Status', hole=0.4,
-                    color_discrete_sequence=px.colors.qualitative.Set2
-                )
-                fig_prev_status.update_traces(textposition='inside', textinfo='percent')
-                fig_prev_status.update_layout(height=200, showlegend=False, margin=dict(t=5, b=5, l=5, r=5), title=dict(text="이전", font=dict(size=11, color="#64648c"), x=0.5))
-                st.plotly_chart(fig_prev_status, use_container_width=True)
-            # Shared legend
-            st.markdown(
-                " · ".join([f"<span style='color:#64648c; font-size:0.75rem;'>■ {r['Order Status']}</span>" for _, r in status_dist.iterrows()]),
-                unsafe_allow_html=True,
+            # Two donuts in one chart: current (left, bigger) + previous (right, smaller)
+            colors = px.colors.qualitative.Set2
+            all_statuses = list(status_dist['Order Status'].unique())
+            color_map = {s: colors[i % len(colors)] for i, s in enumerate(all_statuses)}
+
+            fig_status = make_subplots(
+                rows=1, cols=2, specs=[[{"type": "pie"}, {"type": "pie"}]],
+                subplot_titles=["현재", "이전"],
+                column_widths=[0.6, 0.4],
             )
+            fig_status.add_trace(go.Pie(
+                labels=status_dist['Order Status'], values=status_dist['Count'],
+                hole=0.4, textposition='inside', textinfo='percent+label',
+                marker=dict(colors=[color_map.get(s, '#ccc') for s in status_dist['Order Status']]),
+                showlegend=False,
+            ), row=1, col=1)
+            fig_status.add_trace(go.Pie(
+                labels=prev_status['Order Status'], values=prev_status['Count'],
+                hole=0.4, textposition='inside', textinfo='percent',
+                marker=dict(colors=[color_map.get(s, '#ccc') for s in prev_status['Order Status']]),
+                showlegend=False,
+            ), row=1, col=2)
+            fig_status.update_annotations(font_size=11, font_color="#64648c")
+            fig_status.update_layout(height=300, margin=dict(t=30, b=10, l=10, r=10))
+            st.plotly_chart(fig_status, use_container_width=True)
         else:
             fig_status = px.pie(
                 status_dist, values='Count', names='Order Status', hole=0.4,
