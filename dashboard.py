@@ -1062,7 +1062,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     st.subheader("📅 기간 선택")
 
     # Labels row
-    lbl1, lbl2, lbl_quick, _, _ = st.columns([2, 3, 1, 1, 1])
+    lbl1, lbl2, lbl_quick, _, _, _, _ = st.columns([2, 3, 1, 1, 1, 1, 1])
     with lbl1:
         st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>월 선택</p>", unsafe_allow_html=True)
     with lbl2:
@@ -1071,7 +1071,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>빠른 선택</p>", unsafe_allow_html=True)
 
     # Controls row
-    col_month, col_range, col_q1, col_q2, col_q3 = st.columns([2, 3, 1, 1, 1])
+    col_month, col_range, col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns([2, 3, 1, 1, 1, 1, 1])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
@@ -1131,6 +1131,12 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col_q3:
         if st.button("최근 30일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=29), max_date)
+    with col_q4:
+        if st.button("최근 3개월", use_container_width=True):
+            _queue_range(max_date - datetime.timedelta(days=90), max_date)
+    with col_q5:
+        if st.button("최근 6개월", use_container_width=True):
+            _queue_range(max_date - datetime.timedelta(days=180), max_date)
             _queue_range(min_date, max_date)
 
     # Apply date filter
