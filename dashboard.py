@@ -91,7 +91,8 @@ def _inject_global_styles():
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
-    header[data-testid="stHeader"] { background: white !important; border-bottom: 1px solid #e2e2ea; }
+    header[data-testid="stHeader"] { display: none !important; }
+    .stMainBlockContainer { padding-top: 0 !important; }
 
     /* Typography */
     h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.6rem !important; }
@@ -191,7 +192,6 @@ def _inject_global_styles():
     hr { border-color: #e2e2ea !important; }
 
     /* Reset login-specific styles on non-login pages */
-    .stMainBlockContainer { padding-top: 2.5rem !important; }
     [data-testid="stForm"] {
         border: 1px solid #e2e2ea !important; padding: 1rem !important;
         background: transparent !important; border-radius: 8px !important;
@@ -459,7 +459,30 @@ def show_brand_dashboard():
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
-    # Header
+    # Sticky header + tabs
+    st.markdown("""
+    <style>
+    .brand-sticky-header {
+        position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+        background: white; border-bottom: 1px solid #e2e2ea;
+        padding: 0.75rem 2rem 0 2rem;
+    }
+    .brand-sticky-header h1 {
+        font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1.2rem;
+        color: #1e1e2e; margin: 0;
+    }
+    .brand-sticky-header .header-row {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    /* Push content below sticky header */
+    .stMainBlockContainer > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"]:first-child {
+        margin-top: 3.5rem !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Header row
     col1, col2 = st.columns([6, 1])
     with col1:
         st.markdown(f"""
