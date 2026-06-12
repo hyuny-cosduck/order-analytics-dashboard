@@ -161,7 +161,7 @@ def _inject_global_styles():
         border: 1px solid #e2e2ea;
     }
     [data-testid="stMetric"] label { color: #64648c !important; font-size: 0.7rem !important; font-weight: 500 !important; }
-    [data-testid="stMetric"] [data-testid="stMetricValue"] { color: #1e1e2e !important; font-weight: 700 !important; font-size: 1.3rem !important; }
+    [data-testid="stMetric"] [data-testid="stMetricValue"] { color: #1e1e2e !important; font-weight: 700 !important; font-size: 1.1rem !important; }
     [data-testid="stMetric"] [data-testid="stMetricDelta"] { font-size: 0.75rem !important; }
 
     /* Expanders — compact */
@@ -1062,7 +1062,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     if '_pending_month_sel' in st.session_state:
         st.session_state['main_month_sel'] = st.session_state.pop('_pending_month_sel')
 
-    col_month, col_range, col_q1, col_q2, col_q3, col_q4 = st.columns([2, 3, 1, 1, 1, 1])
+    col_month, col_range, col_qlabel, col_q1, col_q2, col_q3, col_q4 = st.columns([2, 3, 0.8, 0.7, 0.7, 0.7, 0.7])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
@@ -1108,8 +1108,10 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.session_state['_pending_main_range'] = (start, end)
         st.rerun()
 
-    with col_q1:
+    with col_qlabel:
         st.caption("빠른 선택")
+    with col_q1:
+        st.caption("")
         if st.button("7일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=6), max_date)
     with col_q2:
@@ -1145,7 +1147,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     }).reset_index()
 
     # ===== KPI Cards =====
-    st.header("📈 주요 지표")
+    st.subheader("📈 주요 지표")
 
     total_orders = len(order_info)
     total_amount = order_info['Order Amount'].sum()
@@ -1198,7 +1200,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             color_discrete_sequence=px.colors.qualitative.Set2
         )
         fig_status.update_traces(textposition='inside', textinfo='percent+label')
-        fig_status.update_layout(legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=20, b=40))
+        fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
         st.plotly_chart(fig_status, use_container_width=True)
 
     with col2:
@@ -1207,7 +1209,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             status_dist, x='Order Status', y='Amount', color='Order Status',
             text_auto='.2s', color_discrete_sequence=px.colors.qualitative.Set2
         )
-        fig_amount.update_layout(showlegend=False)
+        fig_amount.update_layout(showlegend=False, height=300, margin=dict(t=10, b=30, l=10, r=10))
         st.plotly_chart(fig_amount, use_container_width=True)
 
     st.markdown("---")
