@@ -1348,38 +1348,66 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     with col1:
         st.subheader("Order Status 분포")
-        fig_status = px.pie(
-            status_dist, values='Count', names='Order Status', hole=0.4,
-            color_discrete_sequence=px.colors.qualitative.Set2
-        )
-        fig_status.update_traces(textposition='inside', textinfo='percent+label')
-        fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
-        st.plotly_chart(fig_status, use_container_width=True)
 
-        # Previous period comparison
         if len(prev_status) > 0:
-            prev_total = prev_status['Count'].sum()
-            prev_parts = []
-            for _, r in prev_status.iterrows():
-                pct = r['Count'] / prev_total * 100 if prev_total > 0 else 0
-                prev_parts.append(f"{r['Order Status']} {r['Count']:,.0f}건({pct:.1f}%)")
-            st.caption(f"이전: {' · '.join(prev_parts)}")
+            # Side-by-side: current (big) + previous (small)
+            pie_cur, pie_prev = st.columns([2, 1])
+            with pie_cur:
+                fig_status = px.pie(
+                    status_dist, values='Count', names='Order Status', hole=0.4,
+                    color_discrete_sequence=px.colors.qualitative.Set2
+                )
+                fig_status.update_traces(textposition='inside', textinfo='percent+label')
+                fig_status.update_layout(height=280, showlegend=False, margin=dict(t=5, b=5, l=5, r=5), title=dict(text="현재", font=dict(size=11, color="#64648c"), x=0.5))
+                st.plotly_chart(fig_status, use_container_width=True)
+            with pie_prev:
+                fig_prev_status = px.pie(
+                    prev_status, values='Count', names='Order Status', hole=0.4,
+                    color_discrete_sequence=px.colors.qualitative.Set2
+                )
+                fig_prev_status.update_traces(textposition='inside', textinfo='percent')
+                fig_prev_status.update_layout(height=200, showlegend=False, margin=dict(t=5, b=5, l=5, r=5), title=dict(text="이전", font=dict(size=11, color="#64648c"), x=0.5))
+                st.plotly_chart(fig_prev_status, use_container_width=True)
+            # Shared legend
+            st.markdown(
+                " · ".join([f"<span style='color:#64648c; font-size:0.75rem;'>■ {r['Order Status']}</span>" for _, r in status_dist.iterrows()]),
+                unsafe_allow_html=True,
+            )
+        else:
+            fig_status = px.pie(
+                status_dist, values='Count', names='Order Status', hole=0.4,
+                color_discrete_sequence=px.colors.qualitative.Set2
+            )
+            fig_status.update_traces(textposition='inside', textinfo='percent+label')
+            fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
+            st.plotly_chart(fig_status, use_container_width=True)
 
     with col2:
         st.subheader("💰 Status별 금액")
-        fig_amount = px.bar(
-            status_dist, x='Order Status', y='Amount', color='Order Status',
-            text_auto='.2s', color_discrete_sequence=px.colors.qualitative.Set2
-        )
-        fig_amount.update_layout(showlegend=False, height=300, margin=dict(t=10, b=30, l=10, r=10))
-        st.plotly_chart(fig_amount, use_container_width=True)
 
-        # Previous period comparison
         if len(prev_status) > 0:
-            prev_parts = []
-            for _, r in prev_status.iterrows():
-                prev_parts.append(f"{r['Order Status']} {fmt_money(r['Amount'], currency)}")
-            st.caption(f"이전: {' · '.join(prev_parts)}")
+            # Grouped bar: current vs previous
+            bar_cur = status_dist[['Order Status', 'Amount']].copy()
+            bar_cur['기간'] = '현재'
+            bar_prev = prev_status[['Order Status', 'Amount']].copy()
+            bar_prev['기간'] = '이전'
+            bar_combined = pd.concat([bar_cur, bar_prev], ignore_index=True)
+
+            fig_amount = px.bar(
+                bar_combined, x='Order Status', y='Amount', color='기간',
+                barmode='group', text_auto='.2s',
+                color_discrete_map={'현재': '#6366f1', '이전': '#c7c7d4'}
+            )
+            fig_amount.update_layout(height=300, margin=dict(t=10, b=30, l=10, r=10),
+                                     legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0))
+            st.plotly_chart(fig_amount, use_container_width=True)
+        else:
+            fig_amount = px.bar(
+                status_dist, x='Order Status', y='Amount', color='Order Status',
+                text_auto='.2s', color_discrete_sequence=px.colors.qualitative.Set2
+            )
+            fig_amount.update_layout(showlegend=False, height=300, margin=dict(t=10, b=30, l=10, r=10))
+            st.plotly_chart(fig_amount, use_container_width=True)
 
     st.markdown("---")
 
