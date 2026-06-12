@@ -198,6 +198,10 @@ def _inject_global_styles():
     /* Dividers */
     hr { border-color: #e2e2ea !important; }
 
+    /* Equal height columns */
+    [data-testid="stHorizontalBlock"] { align-items: stretch !important; }
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] > div { height: 100%; }
+
     /* Forms */
     [data-testid="stForm"] {
         border: 1px solid #e2e2ea !important; padding: 1.5rem !important;
@@ -1080,7 +1084,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>빠른 선택</p>", unsafe_allow_html=True)
 
     # Controls row
-    col_month, col_range, col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns([2, 3, 1, 1, 1, 1, 1])
+    col_month, col_range, col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns([1.5, 2.5, 0.8, 0.8, 0.8, 0.8, 0.8])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
@@ -1132,19 +1136,19 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.rerun()
 
     with col_q1:
-        if st.button("최근 7일", use_container_width=True):
+        if st.button("7일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=6), max_date)
     with col_q2:
-        if st.button("최근 14일", use_container_width=True):
+        if st.button("14일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=13), max_date)
     with col_q3:
-        if st.button("최근 30일", use_container_width=True):
+        if st.button("30일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=29), max_date)
     with col_q4:
-        if st.button("최근 3개월", use_container_width=True):
+        if st.button("3개월", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=90), max_date)
     with col_q5:
-        if st.button("최근 6개월", use_container_width=True):
+        if st.button("6개월", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=180), max_date)
 
     # Keep unfiltered copies for previous period comparison
