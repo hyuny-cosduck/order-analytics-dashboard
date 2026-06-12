@@ -1233,27 +1233,40 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     ).reset_index()
 
     kpi_daily = kpi_daily.merge(kpi_canceled_daily, on='Created Date', how='left').fillna(0)
-    kpi_daily['취소율(%)'] = (kpi_daily['취소수'] / kpi_daily['주문수'] * 100).round(1)
 
+    # Add sample data
+    if len(samples_df) > 0 and 'Created Date' in samples_df.columns:
+        sample_daily = samples_df.groupby('Created Date').agg(
+            샘플발송=('Order ID', 'nunique'),
+        ).reset_index()
+        kpi_daily = kpi_daily.merge(sample_daily, on='Created Date', how='left').fillna(0)
+    else:
+        kpi_daily['샘플발송'] = 0
+
+    available_metrics = ["주문수", "매출", "취소수", "취소금액", "샘플발송"]
     kpi_metrics = st.multiselect(
         "지표 선택",
-        options=["주문수", "매출", "취소수", "취소율(%)"],
-        default=["주문수", "취소율(%)"],
+        options=available_metrics,
+        default=["주문수", "취소수", "샘플발송"],
         key="kpi_chart_metrics",
     )
 
     if kpi_metrics:
-        fig_kpi = make_subplots(specs=[[{"secondary_y": True}]])
-        colors = {"주문수": "#6366f1", "매출": "#22c55e", "취소수": "#ef4444", "취소율(%)": "#f59e0b"}
-        # Put % on secondary y-axis
+        colors = {"주문수": "#6366f1", "매출": "#22c55e", "취소수": "#ef4444", "취소금액": "#f97316", "샘플발송": "#a855f7"}
+        # Use secondary y-axis for 매출/취소금액 (different scale from counts)
+        has_count = any(m in kpi_metrics for m in ["주문수", "취소수", "샘플발송"])
+        has_amount = any(m in kpi_metrics for m in ["매출", "취소금액"])
+        use_dual = has_count and has_amount
+
+        fig_kpi = make_subplots(specs=[[{"secondary_y": use_dual}]])
         for m in kpi_metrics:
-            secondary = m == "취소율(%)"
+            secondary = use_dual and m in ("매출", "취소금액")
             fig_kpi.add_trace(
                 go.Scatter(
                     name=m, x=kpi_daily['Created Date'], y=kpi_daily[m],
                     mode='lines+markers', line=dict(color=colors.get(m, '#6366f1'), width=2),
                     marker=dict(size=4),
-                    hovertemplate=f'{m}: %{{y:,.1f}}{"%" if secondary else ""}<extra></extra>',
+                    hovertemplate=f'{m}: %{{y:,.0f}}<extra></extra>',
                 ),
                 secondary_y=secondary,
             )
@@ -1262,8 +1275,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
             hovermode='x unified',
         )
-        fig_kpi.update_yaxes(title_text="", secondary_y=False)
-        fig_kpi.update_yaxes(title_text="", secondary_y=True)
+        if use_dual:
+            fig_kpi.update_yaxes(title_text="건수", secondary_y=False)
+            fig_kpi.update_yaxes(title_text="금액", secondary_y=True)
         st.plotly_chart(fig_kpi, use_container_width=True)
 
     st.markdown("---")
