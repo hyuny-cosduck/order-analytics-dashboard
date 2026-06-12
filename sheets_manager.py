@@ -351,12 +351,12 @@ def load_brands_from_sheet() -> Dict:
 
         brands = {}
         for row in data[1:]:  # Skip header
-            if len(row) >= 4 and row[0]:  # Has brand_name
-                brands[row[0]] = {
-                    'sheet_id': row[1],
-                    'sheet_url': row[2],
-                    'password': row[3],
-                    'currency': row[4] if len(row) >= 5 and row[4] else 'Rp',
+            if len(row) >= 4 and row[0].strip():  # Has brand_name
+                brands[row[0].strip()] = {
+                    'sheet_id': row[1].strip(),
+                    'sheet_url': row[2].strip(),
+                    'password': row[3].strip(),
+                    'currency': row[4].strip() if len(row) >= 5 and row[4].strip() else 'Rp',
                 }
         return brands
     except Exception as e:

@@ -53,6 +53,8 @@ def _save_brands(brands: Dict) -> None:
 
 def _verify_password(password: str, stored: str) -> bool:
     """Verify a password against stored value (plaintext or legacy bcrypt)."""
+    stored = stored.strip()
+    password = password.strip()
     if stored.startswith('$2b$') or stored.startswith('$2a$'):
         return bcrypt.checkpw(password.encode('utf-8'), stored.encode('utf-8'))
     return password == stored
@@ -75,9 +77,9 @@ def get_all_brands() -> Dict:
 def get_brand(brand_name: str) -> Optional[Dict]:
     """Get a specific brand by name (case-insensitive)."""
     brands = _load_brands()
-    brand_lower = brand_name.lower()
+    brand_lower = brand_name.strip().lower()
     for name, data in brands.items():
-        if name.lower() == brand_lower:
+        if name.strip().lower() == brand_lower:
             return {**data, 'name': name}
     return None
 
