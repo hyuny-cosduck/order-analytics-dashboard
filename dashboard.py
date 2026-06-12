@@ -91,7 +91,7 @@ def _inject_global_styles():
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
-    header[data-testid="stHeader"] { background: #f4f4f8 !important; }
+    header[data-testid="stHeader"] { background: white !important; border-bottom: 1px solid #e2e2ea; }
 
     /* Typography */
     h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.6rem !important; }
@@ -460,13 +460,13 @@ def show_brand_dashboard():
     # Header
     col1, col2 = st.columns([6, 1])
     with col1:
-        st.title(f"{brand_name} Order Analytics")
+        st.markdown(f"""
+        <h1 style="font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1.3rem;
+                   color: #1e1e2e; margin: 0; padding: 0.5rem 0;">{brand_name} Order Analytics</h1>
+        """, unsafe_allow_html=True)
     with col2:
-        st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
         if st.button("Logout", type="secondary", use_container_width=True):
             logout()
-
-    st.markdown("---")
 
     # Tabs: Dashboard, Bundle Analysis, and Upload
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
@@ -546,10 +546,12 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         st.info("선택된 번들 상품의 데이터가 없습니다.")
         return
 
-    # Data preprocessing
-    bundle_df['SKU Unit Original Price'] = pd.to_numeric(bundle_df['SKU Unit Original Price'], errors='coerce')
-    bundle_df['Order Amount'] = pd.to_numeric(bundle_df['Order Amount'], errors='coerce')
-    bundle_df['Quantity'] = pd.to_numeric(bundle_df['Quantity'], errors='coerce')
+    # Data preprocessing — only convert columns that exist
+    for col in ['SKU Unit Original Price', 'Order Amount', 'Quantity']:
+        if col in bundle_df.columns:
+            bundle_df[col] = pd.to_numeric(bundle_df[col], errors='coerce')
+        else:
+            bundle_df[col] = 0
 
     # Exclude samples (Order Amount = 0)
     bundle_df = bundle_df[bundle_df['Order Amount'] > 0].copy()
