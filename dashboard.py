@@ -505,8 +505,8 @@ def show_brand_dashboard():
     .brand-header-tabs .htab.active {{ color: #6366f1; border-bottom-color: #6366f1; }}
     .stMainBlockContainer {{ padding-top: 7rem !important; }}
 
-    /* Hide Streamlit's native tabs + panel border */
-    .stTabs [data-baseweb="tab-list"] {{ display: none !important; }}
+    /* Hide Streamlit's native tab bar visually but keep it clickable */
+    .stTabs [data-baseweb="tab-list"] {{ height: 0 !important; overflow: hidden !important; opacity: 0 !important; }}
     .stTabs [data-baseweb="tab-border"] {{ display: none !important; }}
     .stTabs [data-baseweb="tab-highlight"] {{ display: none !important; }}
     .stTabs {{ border: none !important; }}
@@ -1074,8 +1074,8 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     _period_info_placeholder = st.empty()
 
-    # Labels row
-    lbl1, lbl2, lbl_quick, _, _, _, _ = st.columns([2, 3, 1, 1, 1, 1, 1])
+    # Labels row — must match control row ratios
+    lbl1, lbl2, lbl_quick, _, _, _, _ = st.columns([1.5, 2.5, 0.8, 0.8, 0.8, 0.8, 0.8])
     with lbl1:
         st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>월 선택</p>", unsafe_allow_html=True)
     with lbl2:
