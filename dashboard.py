@@ -91,7 +91,7 @@ def _inject_global_styles():
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
-    header[data-testid="stHeader"] { display: none !important; }
+    header[data-testid="stHeader"] { background: transparent !important; }
     .stMainBlockContainer { padding-top: 2rem !important; }
 
     /* Typography — compact like Agency Bot */
