@@ -149,11 +149,6 @@ def show_brand_login_page():
         st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
         st.markdown("""
         <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="width: 48px; height: 48px; background: #6366f1; border-radius: 12px;
-                        display: inline-flex; align-items: center; justify-content: center;
-                        margin-bottom: 1rem;">
-                <span style="font-size: 1.4rem;">📊</span>
-            </div>
             <h2 style="font-family: 'Inter', sans-serif; font-weight: 600;
                        font-size: 1.35rem; color: #1e1e2e; margin: 0 0 0.3rem 0;">
                 Order Analytics
@@ -206,11 +201,6 @@ def show_admin_login_page():
         st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
         st.markdown("""
         <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="width: 48px; height: 48px; background: #6366f1; border-radius: 12px;
-                        display: inline-flex; align-items: center; justify-content: center;
-                        margin-bottom: 1rem;">
-                <span style="font-size: 1.4rem;">⚙️</span>
-            </div>
             <h2 style="font-family: 'Inter', sans-serif; font-weight: 600;
                        font-size: 1.35rem; color: #1e1e2e; margin: 0 0 0.3rem 0;">
                 Admin Panel
