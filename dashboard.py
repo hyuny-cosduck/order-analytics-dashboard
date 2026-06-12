@@ -135,10 +135,11 @@ def _inject_login_styles():
     }
     .stFormSubmitButton > button:hover { background: #4f46e5 !important; }
     .stAlert { border-radius: 8px !important; font-family: 'Inter', sans-serif !important; }
-    /* Hide "Press enter to submit form" */
-    [data-testid="stForm"] > div:last-child > div { display: none !important; }
-    .stFormSubmitButton + div { display: none !important; }
-    [data-testid="stForm"] small { display: none !important; }
+    /* Hide "Press enter to submit form" hint */
+    [data-testid="stFormSubmitButton"] + div[data-testid="stMarkdownContainer"] { display: none !important; }
+    /* Hide anchor links on headings */
+    a.stHeaderLink { display: none !important; }
+    h2 a, h1 a { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
