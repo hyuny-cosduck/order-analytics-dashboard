@@ -88,66 +88,61 @@ def is_admin_route():
 def _inject_login_styles():
     st.markdown("""
     <style>
-    /* Center the login card */
-    .login-container {
-        max-width: 420px;
-        margin: 4rem auto 2rem auto;
-        padding: 2.5rem 2rem 2rem 2rem;
+    /* Full-page login background */
+    .stApp {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    }
+    /* Hide header & footer on login */
+    header[data-testid="stHeader"] { background: transparent; }
+    /* Card styling — target the center column block */
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {
         background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        border-radius: 20px;
+        padding: 2.5rem 2rem 2rem 2rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     }
-    .login-header {
-        text-align: center;
-        margin-bottom: 0.5rem;
-    }
-    .login-header h1 {
-        font-size: 1.75rem;
-        font-weight: 700;
-        color: #1a1a2e;
-        margin-bottom: 0.25rem;
-    }
-    .login-subtitle {
-        text-align: center;
-        color: #6b7280;
-        font-size: 0.95rem;
-        margin-bottom: 1.5rem;
-    }
-    /* Hide default Streamlit form border */
+    /* Form border removal */
     [data-testid="stForm"] {
         border: none !important;
         padding: 0 !important;
     }
-    /* Style text inputs */
-    .login-container .stTextInput > div > div > input {
-        border-radius: 10px;
-        padding: 0.65rem 0.85rem;
-        border: 1.5px solid #e0e0e0;
-        font-size: 0.95rem;
+    /* Input fields */
+    .stTextInput > label {
+        color: #374151 !important;
+        font-weight: 500 !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.02em;
     }
-    .login-container .stTextInput > div > div > input:focus {
-        border-color: #4CAF50;
-        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+    .stTextInput > div > div > input {
+        border-radius: 12px !important;
+        padding: 0.75rem 1rem !important;
+        border: 1.5px solid #e5e7eb !important;
+        font-size: 0.95rem !important;
+        transition: all 0.2s ease !important;
+        background: #f9fafb !important;
     }
-    /* Style submit button */
-    .login-container .stFormSubmitButton > button {
-        border-radius: 10px;
-        padding: 0.6rem 1rem;
-        font-weight: 600;
-        font-size: 0.95rem;
-        margin-top: 0.5rem;
+    .stTextInput > div > div > input:focus {
+        border-color: #2E7D32 !important;
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12) !important;
+        background: white !important;
     }
-    /* Divider line */
-    .login-divider {
-        border: none;
-        border-top: 1px solid #e5e7eb;
-        margin: 1.5rem 0 1rem 0;
+    /* Submit button */
+    .stFormSubmitButton > button {
+        border-radius: 12px !important;
+        padding: 0.75rem 1rem !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        letter-spacing: 0.02em;
+        background: linear-gradient(135deg, #2E7D32, #43A047) !important;
+        border: none !important;
+        transition: all 0.2s ease !important;
     }
-    .login-footer {
-        text-align: center;
-        font-size: 0.8rem;
-        color: #9ca3af;
+    .stFormSubmitButton > button:hover {
+        box-shadow: 0 4px 16px rgba(46, 125, 50, 0.35) !important;
+        transform: translateY(-1px);
     }
+    /* Alert messages */
+    .stAlert { border-radius: 12px !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -156,20 +151,22 @@ def _inject_login_styles():
 def show_brand_login_page():
     _inject_login_styles()
 
-    st.markdown("""
-    <div class="login-container">
-        <div class="login-header"><h1>Order Analytics</h1></div>
-        <p class="login-subtitle">Sign in to your brand dashboard</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1.2, 2, 1.2])
+    col1, col2, col3 = st.columns([1.3, 1.4, 1.3])
 
     with col2:
+        st.markdown("<div style='height: 3rem'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊</div>
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #111827;">Order Analytics</h2>
+            <p style="margin: 0.4rem 0 0 0; color: #6b7280; font-size: 0.9rem;">Sign in to your brand dashboard</p>
+        </div>
+        """, unsafe_allow_html=True)
+
         with st.form("brand_login_form"):
             brand_name = st.text_input("Brand Name", placeholder="Enter your brand name")
             password = st.text_input("Password", type="password", placeholder="Enter your password")
-            st.markdown("<div style='height: 0.25rem'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
             submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
 
         if submitted:
@@ -189,26 +186,32 @@ def show_brand_login_page():
             else:
                 st.warning("Please enter brand name and password")
 
-        st.markdown("<p class='login-footer'>Cosduck Global Team</p>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f0f0f0;">
+            <span style="color: #9ca3af; font-size: 0.8rem;">Cosduck Global Team</span>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ===== ADMIN LOGIN PAGE =====
 def show_admin_login_page():
     _inject_login_styles()
 
-    st.markdown("""
-    <div class="login-container">
-        <div class="login-header"><h1>Admin Panel</h1></div>
-        <p class="login-subtitle">Enter your admin password to continue</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1.2, 2, 1.2])
+    col1, col2, col3 = st.columns([1.3, 1.4, 1.3])
 
     with col2:
+        st.markdown("<div style='height: 3rem'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔐</div>
+            <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700; color: #111827;">Admin Panel</h2>
+            <p style="margin: 0.4rem 0 0 0; color: #6b7280; font-size: 0.9rem;">Enter your password to continue</p>
+        </div>
+        """, unsafe_allow_html=True)
+
         with st.form("admin_login_form"):
             password = st.text_input("Password", type="password", placeholder="Enter admin password")
-            st.markdown("<div style='height: 0.25rem'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
             submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
 
         if submitted:
@@ -224,7 +227,11 @@ def show_admin_login_page():
             else:
                 st.warning("Please enter password")
 
-        st.markdown("<p class='login-footer'>Cosduck Global Team</p>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f0f0f0;">
+            <span style="color: #9ca3af; font-size: 0.8rem;">Cosduck Global Team</span>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 # ===== ADMIN PANEL =====
