@@ -1357,25 +1357,44 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         with _t1:
             show_prev_pie = st.toggle("비교", value=False, key="cmp_status_pie", disabled=not has_prev)
 
-        # Main donut — never changes
-        fig_status = px.pie(
-            status_dist, values='Count', names='Order Status', hole=0.4,
-            color_discrete_sequence=px.colors.qualitative.Set2
-        )
-        fig_status.update_traces(textposition='inside', textinfo='percent+label')
-        fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
-        st.plotly_chart(fig_status, use_container_width=True)
-
-        # Previous period donut — separate small chart below
         if show_prev_pie and has_prev:
-            st.caption("이전 기간")
-            fig_prev_pie = px.pie(
-                prev_status, values='Count', names='Order Status', hole=0.4,
-                color_discrete_sequence=px.colors.qualitative.Set2
+            # Both donuts in one chart, explicit colors so nothing changes
+            fig_status = go.Figure()
+            # Main donut (right, full size)
+            fig_status.add_trace(go.Pie(
+                labels=status_dist['Order Status'], values=status_dist['Count'],
+                hole=0.4, textposition='inside', textinfo='percent+label',
+                marker=dict(colors=[color_map[s] for s in status_dist['Order Status']]),
+                sort=False, showlegend=True,
+                domain=dict(x=[0.25, 1.0], y=[0.0, 1.0]),
+            ))
+            # Previous donut (left-bottom, smaller)
+            fig_status.add_trace(go.Pie(
+                labels=prev_status['Order Status'], values=prev_status['Count'],
+                hole=0.4, textposition='inside', textinfo='percent',
+                marker=dict(colors=[color_map.get(s, '#ccc') for s in prev_status['Order Status']]),
+                sort=False, showlegend=False,
+                domain=dict(x=[0.0, 0.32], y=[0.0, 0.55]),
+            ))
+            fig_status.add_annotation(x=0.16, y=-0.05, text="이전", showarrow=False,
+                                      font=dict(size=10, color="#64648c"))
+            fig_status.update_layout(
+                height=300, margin=dict(t=10, b=25, l=0, r=10),
+                legend=dict(orientation='h', yanchor='bottom', y=-0.15, xanchor='center', x=0.6),
             )
-            fig_prev_pie.update_traces(textposition='inside', textinfo='percent+label')
-            fig_prev_pie.update_layout(height=180, showlegend=False, margin=dict(t=5, b=5, l=5, r=5))
-            st.plotly_chart(fig_prev_pie, use_container_width=True)
+        else:
+            # Single donut, also explicit colors
+            fig_status = go.Figure(go.Pie(
+                labels=status_dist['Order Status'], values=status_dist['Count'],
+                hole=0.4, textposition='inside', textinfo='percent+label',
+                marker=dict(colors=[color_map[s] for s in status_dist['Order Status']]),
+                sort=False,
+            ))
+            fig_status.update_layout(
+                height=300, margin=dict(t=10, b=30, l=10, r=10),
+                legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5),
+            )
+        st.plotly_chart(fig_status, use_container_width=True)
 
     with col2:
         _h2, _t2 = st.columns([4, 1])
