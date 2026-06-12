@@ -1038,16 +1038,6 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     _period_info_placeholder = st.empty()
 
-    # Labels row — must match control row ratios
-    lbl1, lbl2, lbl_quick, _, _, _, _ = st.columns([1.5, 2.5, 0.8, 0.8, 0.8, 0.8, 0.8])
-    with lbl1:
-        st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>월 선택</p>", unsafe_allow_html=True)
-    with lbl2:
-        st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>기간</p>", unsafe_allow_html=True)
-    with lbl_quick:
-        st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>빠른 선택</p>", unsafe_allow_html=True)
-
-    # Controls row
     col_month, col_range, col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns([1.5, 2.5, 0.8, 0.8, 0.8, 0.8, 0.8])
 
     with col_month:
@@ -1057,7 +1047,6 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             options=month_options,
             index=0,
             key="main_month_sel",
-            label_visibility="collapsed",
         )
 
     if selected_month != "전체 기간":
@@ -1079,7 +1068,6 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             min_value=min_date,
             max_value=max_date,
             key=range_key,
-            label_visibility="collapsed",
         )
         if range_key not in st.session_state:
             date_kwargs['value'] = (default_start, default_end)
