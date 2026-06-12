@@ -1222,23 +1222,23 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col1:
         _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else None
         st.metric(label="총 주문 수", value=f"{total_orders:,}건", delta=_d)
-        st.checkbox("📈", value=True, key="kpi_주문수", label_visibility="visible")
+        st.toggle("📈", value=True, key="kpi_주문수")
     with col2:
         _d = f"{d_amount:+.1f}% (이전: {fmt_money(prev_total_amount, currency)})" if d_amount is not None else None
         st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency), delta=_d)
-        st.checkbox("📈", value=False, key="kpi_매출", label_visibility="visible")
+        st.toggle("📈", value=False, key="kpi_매출")
     with col3:
         _d = f"{d_cancel:+.1f}% (이전: {prev_cancel_count:,}건)" if d_cancel is not None else None
         st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)", delta=_d, delta_color="inverse")
-        st.checkbox("📈", value=True, key="kpi_취소수", label_visibility="visible")
+        st.toggle("📈", value=True, key="kpi_취소수")
     with col4:
         _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
         st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
-        st.checkbox("📈", value=False, key="kpi_취소금액", label_visibility="visible")
+        st.toggle("📈", value=False, key="kpi_취소금액")
     with col5:
         _d = f"{d_samples:+.1f}% (이전: {prev_sample_count:,}건)" if d_samples is not None else None
         st.metric(label="샘플 발송", value=f"{sample_count:,}건 / {sample_qty:,}개", delta=_d)
-        st.checkbox("📈", value=True, key="kpi_샘플발송", label_visibility="visible")
+        st.toggle("📈", value=True, key="kpi_샘플발송")
 
     # ===== KPI Daily Trend Chart =====
     kpi_daily = order_info.groupby('Created Date').agg(
