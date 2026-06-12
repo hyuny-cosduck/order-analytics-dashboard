@@ -805,6 +805,10 @@ def show_upload_section(sheet_id: str, brand_name: str):
                         if rows_added == 0 and rows_updated == 0:
                             st.warning("No changes - all data already up to date.")
                         st.cache_data.clear()
+                        # Reset date range so 전체 기간 picks up new data
+                        for key in list(st.session_state.keys()):
+                            if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
+                                del st.session_state[key]
                         if rows_added > 0 or rows_updated > 0:
                             st.balloons()
 
@@ -818,6 +822,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col_refresh:
         if st.button("데이터 새로고침"):
             st.cache_data.clear()
+            for key in list(st.session_state.keys()):
+                if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
+                    del st.session_state[key]
             st.rerun()
 
     with st.spinner("데이터를 불러오는 중..."):
