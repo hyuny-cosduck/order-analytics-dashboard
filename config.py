@@ -1,39 +1,48 @@
 # Configuration settings for Order Analytics Dashboard
 
 import os
+import json
 import streamlit as st
 
 # Check if running on Streamlit Cloud (secrets available)
 def _get_secret(key: str, default: str = None):
-    """Get secret from Streamlit secrets or return default."""
+    """Get secret from Streamlit secrets, env vars, or return default."""
+    # 1. Streamlit secrets (Streamlit Cloud)
     try:
         if key in st.secrets:
             return st.secrets[key]
     except Exception:
         pass
+    # 2. Environment variables (Railway / other platforms)
+    env_val = os.environ.get(key)
+    if env_val:
+        return env_val
     return default
 
 # Google Cloud Settings
 # For local development: use JSON file
-# For Streamlit Cloud: use secrets
+# For deployed environments: use secrets / env vars
 SERVICE_ACCOUNT_FILE = os.path.join(
     os.path.dirname(__file__),
     "data-center-dashboard-3266303edecc.json"
 )
 
-# Service account info (for Streamlit Cloud deployment)
 def get_service_account_info():
-    """Get service account credentials from secrets or file."""
+    """Get service account credentials from secrets, env var, or file."""
+    # 1. Streamlit secrets (Streamlit Cloud)
     try:
-        # Try Streamlit secrets first
         if "gcp_service_account" in st.secrets:
             return dict(st.secrets["gcp_service_account"])
     except Exception:
         pass
 
-    # Fall back to file
+    # 2. Environment variable as JSON string (Railway / other platforms)
+    env_sa = os.environ.get("GCP_SERVICE_ACCOUNT_JSON")
+    if env_sa:
+        return json.loads(env_sa)
+
+    # 3. Fall back to local file (development)
     if os.path.exists(SERVICE_ACCOUNT_FILE):
-        import json
         with open(SERVICE_ACCOUNT_FILE, 'r') as f:
             return json.load(f)
 
@@ -43,8 +52,8 @@ def get_service_account_info():
 # Only this folder will be accessed - no other files/folders will be touched
 DRIVE_FOLDER_ID = _get_secret("DRIVE_FOLDER_ID", "1RjrHjI7ZRWmRQHJU6cWZbfgy7Z0G8Rv7")
 
-# Admin credentials (password only) - use secrets in production
-ADMIN_PASSWORD = _get_secret("ADMIN_PASSWORD", os.environ.get("ADMIN_PASSWORD", "phozphoz1!"))
+# Admin credentials (password only) - MUST be set via env var or secrets in production
+ADMIN_PASSWORD = _get_secret("ADMIN_PASSWORD")
 
 # Config sheet ID — the single _DataCenterConfig sheet that stores brand data.
 # Setting this avoids a Drive search on every page load.
