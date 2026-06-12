@@ -21,7 +21,12 @@ st.set_page_config(
 @st.cache_data(ttl=300, show_spinner=False)
 def load_sheet_data(sheet_id: str):
     """Shared cached loader — both Dashboard and Bundle Analysis tabs reuse one cache entry."""
-    return sheets_manager.read_sheet_data(sheet_id)
+    df, error = sheets_manager.read_sheet_data(sheet_id)
+    if df is not None:
+        # Replace string 'nan' with 'N/A' for display
+        str_cols = df.select_dtypes(include='object').columns
+        df[str_cols] = df[str_cols].fillna('N/A').replace('nan', 'N/A')
+    return df, error
 
 
 def parse_created_time(series: pd.Series) -> pd.Series:
@@ -1313,6 +1318,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                     'Product Name': 'first',
                 }).reset_index()
                 sample_sku.columns = ['SKU', '주문수', '수량', 'Product Name']
+                sample_sku['SKU'] = sample_sku['SKU'].astype(str).replace('nan', 'N/A')
                 sample_sku = sample_sku.sort_values('수량', ascending=False)
                 st.dataframe(sample_sku, use_container_width=True, hide_index=True)
 
