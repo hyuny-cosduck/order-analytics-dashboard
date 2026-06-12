@@ -496,9 +496,9 @@ def show_brand_dashboard():
     .brand-header-tabs .htab.active {{ color: #6366f1; border-bottom-color: #6366f1; }}
     .stMainBlockContainer {{ padding-top: 7rem !important; }}
 
-    /* Hide Streamlit's native tabs + hidden logout */
+    /* Hide Streamlit's native tabs */
     .stTabs [data-baseweb="tab-list"] {{ display: none !important; }}
-    #hidden-logout-wrap {{ position: absolute; left: -9999px; }}
+    /* Hide the hidden Streamlit buttons via JS after render */
     </style>
     <div class="brand-header" id="brand-header">
         <div class="brand-header-title">
@@ -556,14 +556,26 @@ def show_brand_dashboard():
                 }}
             }});
         }}
+        // Hide the Streamlit Logout + Refresh buttons (they sit above the tabs)
+        const allButtons = document.querySelectorAll('[data-testid="stButton"]');
+        allButtons.forEach(btnWrap => {{
+            const btn = btnWrap.querySelector('button');
+            if (btn && (btn.textContent.trim() === 'Logout' || btn.textContent.trim() === 'Refresh')) {{
+                // Walk up to the block container and hide it
+                let el = btnWrap;
+                while (el && !el.getAttribute('data-testid')?.startsWith('stVerticalBlock')) {{
+                    el = el.parentElement;
+                }}
+                if (el) el.style.display = 'none';
+                else btnWrap.style.display = 'none';
+            }}
+        }});
     }})();
     </script>
     """, unsafe_allow_html=True)
 
-    # Hidden Streamlit buttons (positioned off-screen, triggered by JS)
-    st.markdown("""<style>
-    .hidden-controls { position: absolute; left: -9999px; height: 0; overflow: hidden; }
-    </style><div class="hidden-controls">""", unsafe_allow_html=True)
+    # Hidden Streamlit buttons (triggered by JS from fixed header)
+    # Use unique invisible text so we can target them with CSS
     if st.button("Logout", key="hidden_logout"):
         logout()
     if st.button("Refresh", key="hidden_refresh"):
@@ -572,7 +584,6 @@ def show_brand_dashboard():
             if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
                 del st.session_state[key]
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
     # Streamlit tabs (tab-list hidden by CSS, controlled by HTML header tabs)
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
