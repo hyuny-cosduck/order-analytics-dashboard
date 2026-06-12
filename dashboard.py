@@ -271,7 +271,7 @@ def show_admin_panel():
 
     col1, col2, col3 = st.columns([4, 1, 1])
     with col2:
-        if st.button("Refresh", type="secondary"):
+        if st.button("🔄 Refresh", type="secondary"):
             st.cache_data.clear()
             st.rerun()
     with col3:
@@ -280,7 +280,7 @@ def show_admin_panel():
 
     st.markdown("---")
 
-    tab1, tab2, tab3 = st.tabs(["All Brands", "Add Brand", "Import Existing Sheet"])
+    tab1, tab2, tab3 = st.tabs(["📋 All Brands", "➕ Add Brand", "📥 Import Existing Sheet"])
 
     # Tab 1: View all brands
     with tab1:
@@ -409,11 +409,12 @@ def show_brand_dashboard():
     currency = brand_data.get('currency', 'Rp')
 
     # Header
-    col1, col2 = st.columns([4, 1])
+    col1, col2 = st.columns([5, 1])
     with col1:
         st.title(f"{brand_name} Order Analytics")
     with col2:
-        if st.button("Logout"):
+        st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
+        if st.button("Logout", type="secondary"):
             logout()
 
     st.markdown("---")
