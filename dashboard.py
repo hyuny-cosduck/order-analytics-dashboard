@@ -1061,6 +1061,16 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     st.subheader("📅 기간 선택")
 
+    # Labels row
+    lbl1, lbl2, _, lbl_quick, _, _, _ = st.columns([2, 3, 0.2, 1, 1, 1, 1])
+    with lbl1:
+        st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>월 선택</p>", unsafe_allow_html=True)
+    with lbl2:
+        st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>기간</p>", unsafe_allow_html=True)
+    with lbl_quick:
+        st.markdown("<p style='font-weight:500; font-size:0.8rem; color:#64648c; margin:0 0 -1rem 0;'>빠른 선택</p>", unsafe_allow_html=True)
+
+    # Controls row
     col_month, col_range, col_q1, col_q2, col_q3, col_q4 = st.columns([2, 3, 1, 1, 1, 1])
 
     with col_month:
@@ -1070,6 +1080,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             options=month_options,
             index=0,
             key="main_month_sel",
+            label_visibility="collapsed",
         )
 
     if selected_month != "전체 기간":
@@ -1091,6 +1102,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             min_value=min_date,
             max_value=max_date,
             key=range_key,
+            label_visibility="collapsed",
         )
 
     if isinstance(date_range, tuple) and len(date_range) == 2:
@@ -1118,6 +1130,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             _queue_range(max_date - datetime.timedelta(days=29), max_date)
     with col_q4:
         if st.button("전체", use_container_width=True):
+            _queue_range(min_date, max_date)
             _queue_range(min_date, max_date)
 
     # Apply date filter
