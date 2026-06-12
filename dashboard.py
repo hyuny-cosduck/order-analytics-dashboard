@@ -748,7 +748,8 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         )
         fig_daily.add_trace(
             go.Scatter(name='취소율(%)', x=daily_stats['Date'], y=daily_stats['취소율(%)'],
-                       mode='lines+markers', line=dict(color='#FF9800', width=2)), secondary_y=True
+                       mode='lines+markers', line=dict(color='#FF9800', width=2),
+                       hovertemplate='%{x}<br>취소율 %{y:.1f}%<extra></extra>'), secondary_y=True
         )
         fig_daily.update_layout(barmode='overlay', height=400, title='날짜별 번들 주문/취소 추이')
         fig_daily.update_yaxes(title_text="주문 수", secondary_y=False)
@@ -1055,7 +1056,8 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     )
     fig_daily.add_trace(
         go.Scatter(name='취소율(%)', x=daily_summary['Created Date'], y=daily_summary['취소율(%)'],
-                   mode='lines+markers', line=dict(color='#FF9800', width=2)), secondary_y=True
+                   mode='lines+markers', line=dict(color='#FF9800', width=2),
+                   hovertemplate='%{x}<br>취소율 %{y:.1f}%<extra></extra>'), secondary_y=True
     )
     fig_daily.update_layout(barmode='overlay', height=400)
     fig_daily.update_yaxes(title_text="주문 수", secondary_y=False)
