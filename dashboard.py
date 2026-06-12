@@ -179,8 +179,10 @@ def _inject_global_styles():
     /* Plotly charts */
     [data-testid="stPlotlyChart"] {
         background: white; border-radius: 12px; padding: 0.75rem;
-        border: 1px solid #e2e2ea;
+        border: 1px solid #e2e2ea; overflow: hidden;
     }
+    [data-testid="stPlotlyChart"] > div { width: 100% !important; }
+    .js-plotly-plot, .plot-container { width: 100% !important; }
 
     /* Hide anchor links */
     a.stHeaderLink, h1 a, h2 a { display: none !important; }
