@@ -4,9 +4,41 @@ import json
 import os
 import secrets
 import string
+import time
+from collections import defaultdict
 from typing import Optional, Dict, Tuple
+import bcrypt
 import config
 import sheets_manager
+
+# Simple in-memory rate limiter: max 5 failed attempts per key per 5-minute window
+_MAX_ATTEMPTS = 5
+_WINDOW_SECONDS = 300
+_failed_attempts: Dict[str, list] = defaultdict(list)
+
+
+def _is_rate_limited(key: str) -> bool:
+    """Check if a login key is rate-limited."""
+    now = time.time()
+    # Prune old attempts
+    _failed_attempts[key] = [t for t in _failed_attempts[key] if now - t < _WINDOW_SECONDS]
+    return len(_failed_attempts[key]) >= _MAX_ATTEMPTS
+
+
+def _record_failed_attempt(key: str) -> None:
+    _failed_attempts[key].append(time.time())
+
+
+def _clear_failed_attempts(key: str) -> None:
+    _failed_attempts.pop(key, None)
+
+
+def is_brand_rate_limited(brand_name: str) -> bool:
+    return _is_rate_limited(f"brand:{brand_name.lower()}")
+
+
+def is_admin_rate_limited() -> bool:
+    return _is_rate_limited("admin")
 
 
 def _load_brands() -> Dict:
@@ -17,6 +49,19 @@ def _load_brands() -> Dict:
 def _save_brands(brands: Dict) -> None:
     """Save brands to Google Sheet (persistent storage)."""
     sheets_manager.save_brands_to_sheet(brands)
+
+
+def _hash_password(password: str) -> str:
+    """Hash a password using bcrypt."""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+
+def _verify_password(password: str, hashed: str) -> bool:
+    """Verify a password against a bcrypt hash. Also accepts legacy plaintext."""
+    if hashed.startswith('$2b$') or hashed.startswith('$2a$'):
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+    # Legacy plaintext comparison — will be upgraded on successful login
+    return password == hashed
 
 
 def generate_password(brand_name: str = "") -> str:
@@ -47,16 +92,44 @@ def authenticate_brand(brand_name: str, password: str) -> Optional[Dict]:
     """
     Authenticate a brand login.
     Returns brand data if successful, None otherwise.
+    Auto-upgrades legacy plaintext passwords to bcrypt on successful login.
+    Returns None with rate limiting after too many failed attempts.
     """
+    key = f"brand:{brand_name.lower()}"
+    if _is_rate_limited(key):
+        return None
     brand = get_brand(brand_name)
-    if brand and brand.get('password') == password:
-        return brand
-    return None
+    if not brand:
+        _record_failed_attempt(key)
+        return None
+    stored = brand.get('password', '')
+    if not _verify_password(password, stored):
+        _record_failed_attempt(key)
+        return None
+    _clear_failed_attempts(key)
+    # Auto-upgrade plaintext → bcrypt
+    if not (stored.startswith('$2b$') or stored.startswith('$2a$')):
+        brands = _load_brands()
+        for name in brands:
+            if name.lower() == brand_name.lower():
+                brands[name]['password'] = _hash_password(password)
+                _save_brands(brands)
+                break
+    return brand
 
 
 def authenticate_admin(password: str) -> bool:
     """Authenticate admin login (password only)."""
-    return password == config.ADMIN_PASSWORD
+    if not config.ADMIN_PASSWORD:
+        return False
+    key = "admin"
+    if _is_rate_limited(key):
+        return False
+    if password != config.ADMIN_PASSWORD:
+        _record_failed_attempt(key)
+        return False
+    _clear_failed_attempts(key)
+    return True
 
 
 def add_brand(brand_name: str, currency: str = "Rp") -> Tuple[Optional[Dict], Optional[str]]:
@@ -77,20 +150,21 @@ def add_brand(brand_name: str, currency: str = "Rp") -> Tuple[Optional[Dict], Op
         return None, f"Failed to create sheet: {str(e)}"
 
     # Generate password with brand name
-    password = generate_password(brand_name)
+    raw_password = generate_password(brand_name)
 
-    # Store brand data
+    # Store brand data with hashed password
     brand_data = {
         'sheet_id': sheet_id,
         'sheet_url': sheet_url,
-        'password': password,
+        'password': _hash_password(raw_password),
         'currency': currency,
     }
 
     brands[brand_name] = brand_data
     _save_brands(brands)
 
-    return {**brand_data, 'name': brand_name}, None
+    # Return plaintext password for one-time display to admin
+    return {**brand_data, 'name': brand_name, 'password': raw_password}, None
 
 
 def update_brand_password(brand_name: str, new_password: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
@@ -114,9 +188,10 @@ def update_brand_password(brand_name: str, new_password: Optional[str] = None) -
     if new_password is None:
         new_password = generate_password(actual_name)
 
-    brands[actual_name]['password'] = new_password
+    brands[actual_name]['password'] = _hash_password(new_password)
     _save_brands(brands)
 
+    # Return plaintext for one-time display to admin
     return new_password, None
 
 
@@ -170,20 +245,21 @@ def import_existing_sheet(brand_name: str, sheet_id: str, currency: str = "Rp") 
         return None, f"Sheet not accessible: {sheet_err}. Make sure it's shared with the service account."
 
     # Generate password with brand name
-    password = generate_password(brand_name)
+    raw_password = generate_password(brand_name)
 
-    # Store brand data
+    # Store brand data with hashed password
     brand_data = {
         'sheet_id': sheet_id,
         'sheet_url': f"https://docs.google.com/spreadsheets/d/{sheet_id}",
-        'password': password,
+        'password': _hash_password(raw_password),
         'currency': currency,
     }
 
     brands[brand_name] = brand_data
     _save_brands(brands)
 
-    return {**brand_data, 'name': brand_name}, None
+    # Return plaintext password for one-time display to admin
+    return {**brand_data, 'name': brand_name, 'password': raw_password}, None
 
 
 def migrate_from_json_file() -> Tuple[int, Optional[str]]:

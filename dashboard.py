@@ -99,15 +99,18 @@ def show_brand_login_page():
 
         if st.button("Login", type="primary", use_container_width=True):
             if brand_name and password:
-                brand_data = brands_manager.authenticate_brand(brand_name, password)
-                if brand_data:
-                    st.session_state.authenticated = True
-                    st.session_state.is_admin = False
-                    st.session_state.brand_name = brand_data['name']
-                    st.session_state.brand_data = brand_data
-                    st.rerun()
+                if brands_manager.is_brand_rate_limited(brand_name):
+                    st.error("Too many failed attempts. Please try again later.")
                 else:
-                    st.error("Invalid brand name or password")
+                    brand_data = brands_manager.authenticate_brand(brand_name, password)
+                    if brand_data:
+                        st.session_state.authenticated = True
+                        st.session_state.is_admin = False
+                        st.session_state.brand_name = brand_data['name']
+                        st.session_state.brand_data = brand_data
+                        st.rerun()
+                    else:
+                        st.error("Invalid brand name or password")
             else:
                 st.warning("Please enter brand name and password")
 
@@ -124,7 +127,9 @@ def show_admin_login_page():
 
         if st.button("Login", type="primary", use_container_width=True):
             if password:
-                if brands_manager.authenticate_admin(password):
+                if brands_manager.is_admin_rate_limited():
+                    st.error("Too many failed attempts. Please try again later.")
+                elif brands_manager.authenticate_admin(password):
                     st.session_state.authenticated = True
                     st.session_state.is_admin = True
                     st.rerun()
@@ -166,8 +171,7 @@ def show_admin_panel():
 
                     with col1:
                         st.write(f"**Sheet ID:** `{data.get('sheet_id', 'N/A')}`")
-                        st.write("**Password:**")
-                        st.code(data.get('password', 'N/A'), language=None)
+                        st.write("**Password:** (hashed — reset to see new password)")
                         if data.get('sheet_url'):
                             st.write(f"[Open Google Sheet]({data.get('sheet_url')})")
 
