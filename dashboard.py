@@ -1137,7 +1137,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col_q5:
         if st.button("최근 6개월", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=180), max_date)
-            _queue_range(min_date, max_date)
+
+    # Keep unfiltered df for previous period comparison
+    df_all = df.copy()
 
     # Apply date filter
     df = df[(df['Created Date'] >= start_date) & (df['Created Date'] <= end_date)]
@@ -1148,7 +1150,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     st.info(f"선택된 기간: **{start_date}** ~ **{end_date}** ({len(df):,}행{sample_info})")
     st.markdown("---")
 
-    # Order-level aggregation
+    # Order-level aggregation (current period)
     df_sorted = df.sort_values('Created Time', ascending=False) if 'Created Time' in df.columns else df
     order_info = df_sorted.groupby('Order ID').agg({
         'Order Amount': 'first',
@@ -1157,6 +1159,31 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         'Payment Method': 'first' if 'Payment Method' in df.columns else lambda x: None,
         'Tracking ID': 'first' if 'Tracking ID' in df.columns else lambda x: None
     }).reset_index()
+
+    # Previous period comparison
+    period_days = (end_date - start_date).days + 1
+    prev_end = start_date - datetime.timedelta(days=1)
+    prev_start = prev_end - datetime.timedelta(days=period_days - 1)
+    df_prev = df_all[(df_all['Created Date'] >= prev_start) & (df_all['Created Date'] <= prev_end)]
+
+    if len(df_prev) > 0:
+        df_prev_sorted = df_prev.sort_values('Created Time', ascending=False) if 'Created Time' in df_prev.columns else df_prev
+        prev_order_info = df_prev_sorted.groupby('Order ID').agg({
+            'Order Amount': 'first',
+            'Order Status': 'first',
+        }).reset_index()
+        prev_total_orders = len(prev_order_info)
+        prev_total_amount = prev_order_info['Order Amount'].sum()
+        prev_canceled = prev_order_info[prev_order_info['Order Status'].isin(('Canceled', 'Cancelled'))]
+        prev_cancel_count = len(prev_canceled)
+        prev_cancel_amount = prev_canceled['Order Amount'].sum()
+    else:
+        prev_total_orders = prev_total_amount = prev_cancel_count = prev_cancel_amount = 0
+
+    def _pct_change(current, previous):
+        if previous == 0:
+            return None
+        return ((current - previous) / previous) * 100
 
     # ===== KPI Cards =====
     st.subheader("📈 주요 지표")
@@ -1168,16 +1195,25 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     cancel_rate = cancel_count / total_orders * 100 if total_orders > 0 else 0
     cancel_amount = canceled_orders['Order Amount'].sum()
 
+    d_orders = _pct_change(total_orders, prev_total_orders)
+    d_amount = _pct_change(total_amount, prev_total_amount)
+    d_cancel = _pct_change(cancel_count, prev_cancel_count)
+    d_cancel_amt = _pct_change(cancel_amount, prev_cancel_amount)
+
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric(label="총 주문 수", value=f"{total_orders:,}건")
+        st.metric(label="총 주문 수", value=f"{total_orders:,}건",
+                  delta=f"{d_orders:+.1f}%" if d_orders is not None else None)
     with col2:
-        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency))
+        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency),
+                  delta=f"{d_amount:+.1f}%" if d_amount is not None else None)
     with col3:
-        st.metric(label="취소 주문 수", value=f"{cancel_count:,}건", delta=f"{cancel_rate:.1f}%", delta_color="inverse")
+        st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)",
+                  delta=f"{d_cancel:+.1f}%" if d_cancel is not None else None, delta_color="inverse")
     with col4:
-        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency))
+        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency),
+                  delta=f"{d_cancel_amt:+.1f}%" if d_cancel_amt is not None else None, delta_color="inverse")
 
     # ===== Sample/Creator Orders =====
     if len(samples_df) > 0:
