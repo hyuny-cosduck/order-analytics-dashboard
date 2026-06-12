@@ -135,6 +135,10 @@ def _inject_login_styles():
     }
     .stFormSubmitButton > button:hover { background: #4f46e5 !important; }
     .stAlert { border-radius: 8px !important; font-family: 'Inter', sans-serif !important; }
+    /* Hide "Press enter to submit form" */
+    [data-testid="stForm"] > div:last-child > div { display: none !important; }
+    .stFormSubmitButton + div { display: none !important; }
+    [data-testid="stForm"] small { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -151,11 +155,11 @@ def show_brand_login_page():
         <div style="text-align: center; margin-bottom: 2rem;">
             <h2 style="font-family: 'Inter', sans-serif; font-weight: 600;
                        font-size: 1.35rem; color: #1e1e2e; margin: 0 0 0.3rem 0;">
-                주문 분석
+                Orders Dashboard
             </h2>
             <p style="font-family: 'Inter', sans-serif; font-weight: 400;
                       font-size: 0.85rem; color: #8888a0; margin: 0;">
-                브랜드 대시보드에 로그인하세요
+                브랜드 비밀번호는 담당 AM에게 문의해주세요
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -183,12 +187,6 @@ def show_brand_login_page():
             else:
                 st.warning("브랜드명과 비밀번호를 입력하세요")
 
-        st.markdown("""
-        <p style="text-align: center; font-family: 'Inter', sans-serif; font-size: 0.75rem;
-                  color: #b0b0c0; margin-top: 1.5rem;">
-            Cosduck
-        </p>
-        """, unsafe_allow_html=True)
 
 
 # ===== ADMIN LOGIN PAGE =====
@@ -230,12 +228,6 @@ def show_admin_login_page():
             else:
                 st.warning("비밀번호를 입력하세요")
 
-        st.markdown("""
-        <p style="text-align: center; font-family: 'Inter', sans-serif; font-size: 0.75rem;
-                  color: #b0b0c0; margin-top: 1.5rem;">
-            Cosduck
-        </p>
-        """, unsafe_allow_html=True)
 
 
 # ===== ADMIN PANEL =====
