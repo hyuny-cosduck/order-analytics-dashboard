@@ -92,7 +92,9 @@ def _inject_global_styles():
 
     .stApp { background: #f4f4f8 !important; }
     header[data-testid="stHeader"] { background: #f4f4f8 !important; }
-    * { font-family: 'Inter', sans-serif !important; }
+    body, p, span, div, input, button, label, h1, h2, h3, h4, h5, h6, td, th, li, a {
+        font-family: 'Inter', sans-serif !important;
+    }
 
     /* Inputs */
     .stTextInput > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
@@ -260,11 +262,11 @@ def show_admin_login_page():
 # ===== ADMIN PANEL =====
 def show_admin_panel():
     _inject_global_styles()
-    st.title("🔧 Admin Panel")
+    st.title("Admin Panel")
 
     col1, col2, col3 = st.columns([4, 1, 1])
     with col2:
-        if st.button("🔄 Refresh", type="secondary"):
+        if st.button("Refresh", type="secondary"):
             st.cache_data.clear()
             st.rerun()
     with col3:
@@ -273,7 +275,7 @@ def show_admin_panel():
 
     st.markdown("---")
 
-    tab1, tab2, tab3 = st.tabs(["📋 All Brands", "➕ Add Brand", "📥 Import Existing Sheet"])
+    tab1, tab2, tab3 = st.tabs(["All Brands", "Add Brand", "Import Existing Sheet"])
 
     # Tab 1: View all brands
     with tab1:
@@ -404,7 +406,7 @@ def show_brand_dashboard():
     # Header
     col1, col2 = st.columns([4, 1])
     with col1:
-        st.title(f"📊 {brand_name} Order Analytics")
+        st.title(f"{brand_name} Order Analytics")
     with col2:
         if st.button("Logout"):
             logout()
@@ -412,7 +414,7 @@ def show_brand_dashboard():
     st.markdown("---")
 
     # Tabs: Dashboard, Bundle Analysis, and Upload
-    tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
+    tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "번들 분석", "📤 Upload Data"])
 
     with tab1:
         show_dashboard_content(sheet_id, currency)
@@ -426,7 +428,7 @@ def show_brand_dashboard():
 
 def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
     """번들 SKU별 구매/취소 분석"""
-    st.subheader("📦 번들 SKU 분석")
+    st.subheader("번들 SKU 분석")
     st.caption("BDL_BEPLAIN 번들 상품의 구매/취소 현황을 분석합니다.")
 
     with st.spinner("데이터를 불러오는 중..."):
@@ -531,11 +533,11 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
                     _queue_bundle_range(min_date, max_date)
 
             bundle_df = bundle_df[(bundle_df['Created Date'] >= start_date) & (bundle_df['Created Date'] <= end_date)]
-            st.info(f"📊 선택된 기간: **{start_date}** ~ **{end_date}** ({len(bundle_df):,}건)")
+            st.info(f"선택된 기간: **{start_date}** ~ **{end_date}** ({len(bundle_df):,}건)")
 
         st.markdown("---")
 
-    st.info(f"📊 번들 상품 총 {len(bundle_df):,}건 (SKU {bundle_df['Seller SKU'].nunique()}개)")
+    st.info(f"번들 상품 총 {len(bundle_df):,}건 (SKU {bundle_df['Seller SKU'].nunique()}개)")
     st.markdown("---")
 
     # ===== KPI Summary =====
@@ -558,7 +560,7 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
     st.markdown("---")
 
     # ===== SKU별 분석 =====
-    st.subheader("📊 번들 SKU별 취소율")
+    st.subheader("번들 SKU별 취소율")
 
     sku_stats = bundle_df.groupby('Seller SKU').agg({
         'SKU Unit Original Price': 'first',
@@ -612,7 +614,7 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         fig_cancel.update_layout(xaxis_title='번들 번호', xaxis={'categoryorder': 'array', 'categoryarray': sku_stats['번호'].tolist()})
         st.plotly_chart(fig_cancel, use_container_width=True)
 
-    with st.expander("📋 번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
+    with st.expander("번들 번호 ↔ 상품 매칭 / 상세 데이터", expanded=True):
         display_df = sku_stats[['번호', 'Product Name', 'SKU', '단가', '전체 주문(order ID)', '전체 주문(quantity)', '취소 주문(order ID)', '취소 주문(quantity)', '취소율(%)']].copy()
         display_df['단가'] = display_df['단가'].apply(lambda x: fmt_money(x, currency) if pd.notna(x) and x > 0 else "-")
         st.dataframe(display_df, use_container_width=True, hide_index=True)
@@ -660,7 +662,7 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
     st.markdown("---")
 
     # ===== 번들 특성별 분석 =====
-    st.subheader("🏷️ 번들 특성별 분석")
+    st.subheader("번들 특성별 분석")
 
     # 번들 특성 분류 (Product Name 기반)
     def classify_bundle(name):
@@ -708,7 +710,7 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         fig_type_cancel.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
         st.plotly_chart(fig_type_cancel, use_container_width=True)
 
-    with st.expander("📋 번들 유형별 상세 데이터"):
+    with st.expander("번들 유형별 상세 데이터"):
         type_display = type_stats.copy()
         type_display['평균가격'] = type_display['평균가격'].apply(lambda x: fmt_money(x, currency) if pd.notna(x) else "-")
         st.dataframe(type_display, use_container_width=True)
@@ -744,7 +746,7 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         fig_daily.update_yaxes(title_text="취소율 (%)", secondary_y=True)
         st.plotly_chart(fig_daily, use_container_width=True)
 
-        with st.expander("📋 날짜별 상세 데이터"):
+        with st.expander("날짜별 상세 데이터"):
             st.dataframe(daily_stats, use_container_width=True)
 
 
@@ -785,11 +787,11 @@ def show_upload_section(sheet_id: str, brand_name: str):
                         st.error(f"Upload failed: {error}")
                     else:
                         if rows_added > 0:
-                            st.success(f"➕ Added **{rows_added:,}** new rows")
+                            st.success(f"Added **{rows_added:,}** new rows")
                         if rows_updated > 0:
-                            st.success(f"🔄 Updated **{rows_updated:,}** existing rows")
+                            st.success(f"Updated **{rows_updated:,}** existing rows")
                         if duplicates_skipped > 0:
-                            st.info(f"⏭️ Skipped **{duplicates_skipped:,}** unchanged rows")
+                            st.info(f"Skipped **{duplicates_skipped:,}** unchanged rows")
                         if rows_added == 0 and rows_updated == 0:
                             st.warning("No changes - all data already up to date.")
                         st.cache_data.clear()
@@ -804,7 +806,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     # Refresh button
     col_refresh, col_info = st.columns([1, 4])
     with col_refresh:
-        if st.button("🔄 데이터 새로고침"):
+        if st.button("데이터 새로고침"):
             st.cache_data.clear()
             st.rerun()
 
@@ -939,7 +941,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         samples_df = samples_df[(samples_df['Created Date'] >= start_date) & (samples_df['Created Date'] <= end_date)]
 
     sample_info = f" | 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
-    st.info(f"📊 선택된 기간: **{start_date}** ~ **{end_date}** ({len(df):,}행{sample_info})")
+    st.info(f"선택된 기간: **{start_date}** ~ **{end_date}** ({len(df):,}행{sample_info})")
     st.markdown("---")
 
     # Order-level aggregation
@@ -994,7 +996,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("📊 Order Status 분포")
+        st.subheader("Order Status 분포")
         status_dist = order_info.groupby('Order Status').agg({
             'Order ID': 'count',
             'Order Amount': 'sum'
@@ -1051,7 +1053,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     fig_daily.update_yaxes(title_text="취소율 (%)", secondary_y=True)
     st.plotly_chart(fig_daily, use_container_width=True)
 
-    with st.expander("📋 날짜별 상세 데이터"):
+    with st.expander("날짜별 상세 데이터"):
         daily_display = daily_summary.copy()
         daily_display['전체매출'] = daily_display['전체매출'].apply(lambda x: fmt_money(x, currency))
         daily_display['취소매출'] = daily_display['취소매출'].apply(lambda x: fmt_money(x, currency))
@@ -1061,7 +1063,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     # ===== Product Analysis =====
     if 'Seller SKU' in df.columns:
-        st.subheader("📦 제품별 주문/취소 현황")
+        st.subheader("제품별 주문/취소 현황")
 
         product_name_map = df.groupby('Seller SKU')['Product Name'].first() if 'Product Name' in df.columns else {}
 
@@ -1127,14 +1129,14 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         # Mapping tables so users can see which # corresponds to which product
         map_col1, map_col2 = st.columns(2)
         with map_col1:
-            st.caption("📋 상위 10개 제품 매칭")
+            st.caption("상위 10개 제품 매칭")
             map_cols_top = ['번호', 'Product Name', '전체 주문(quantity)', '정상 주문(quantity)', '취소 주문(quantity)', '취소율(%)']
             st.dataframe(top_sku[[c for c in map_cols_top if c in top_sku.columns]], use_container_width=True, hide_index=True)
         with map_col2:
-            st.caption("📋 취소율 상위 10개 제품 매칭")
+            st.caption("취소율 상위 10개 제품 매칭")
             st.dataframe(high_cancel_sku[[c for c in map_cols_top if c in high_cancel_sku.columns]], use_container_width=True, hide_index=True)
 
-        with st.expander("📋 전체 제품 상세 데이터"):
+        with st.expander("전체 제품 상세 데이터"):
             display_cols = ['Product Name', 'Seller SKU', '전체 주문(order ID)', '전체 주문(quantity)', '정상 주문(quantity)', '취소 주문(order ID)', '취소 주문(quantity)', '취소율(%)', '전체주문건수']
             available_cols = [c for c in display_cols if c in sku_summary.columns]
             st.dataframe(sku_summary[available_cols], use_container_width=True)
@@ -1242,14 +1244,14 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             **선결제**: {len(non_cod_orders):,}건 (취소율 {non_cod_cancel_rate:.1f}%)
             """)
 
-        with st.expander("📋 Payment Method별 상세 데이터"):
+        with st.expander("Payment Method별 상세 데이터"):
             payment_display = payment_df.copy()
             payment_display['전체매출'] = payment_display['전체매출'].apply(lambda x: fmt_money(x, currency))
             st.dataframe(payment_display, use_container_width=True)
 
     # Footer
     st.markdown("---")
-    st.caption("📊 데이터는 Google Sheets에서 자동으로 불러옵니다.")
+    st.caption("데이터는 Google Sheets에서 자동으로 불러옵니다.")
 
 
 # ===== MAIN APP ROUTING =====
