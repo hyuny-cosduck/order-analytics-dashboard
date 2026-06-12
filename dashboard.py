@@ -88,76 +88,45 @@ def is_admin_route():
 def _inject_login_styles():
     st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500&display=swap');
 
-    /* Warm minimal background */
-    .stApp {
-        background: #ede8e2 !important;
-    }
-    header[data-testid="stHeader"] {
-        background: transparent !important;
-    }
-    /* Remove default padding */
-    .stMainBlockContainer {
-        padding-top: 0 !important;
-    }
-    /* Form border removal */
-    [data-testid="stForm"] {
-        border: none !important;
-        padding: 0 !important;
-    }
-    /* Input labels */
-    .stTextInput > label {
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 400 !important;
-        font-size: 0.75rem !important;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #8a7e74 !important;
-    }
-    /* Input fields */
+    .stApp { background: #f5f0eb !important; }
+    header[data-testid="stHeader"] { background: transparent !important; }
+    .stMainBlockContainer { padding-top: 0 !important; }
+
+    [data-testid="stForm"] { border: none !important; padding: 0 !important; }
+
+    .stTextInput > label { display: none !important; }
     .stTextInput > div > div > input {
-        border-radius: 0 !important;
-        border: none !important;
-        border-bottom: 1.5px solid #c4b8ad !important;
-        padding: 0.7rem 0 !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 1rem !important;
-        background: transparent !important;
-        color: #2c2420 !important;
-        transition: border-color 0.3s ease !important;
+        border: 1px solid #d5cdc4 !important;
+        border-radius: 8px !important;
+        padding: 0.85rem 1rem !important;
+        font-family: 'DM Sans', sans-serif !important;
+        font-size: 0.9rem !important;
+        background: white !important;
+        color: #1a1a1a !important;
     }
     .stTextInput > div > div > input:focus {
-        border-bottom-color: #2c2420 !important;
+        border-color: #1a1a1a !important;
         box-shadow: none !important;
     }
     .stTextInput > div > div > input::placeholder {
-        color: #b8ada3 !important;
-        font-weight: 300 !important;
+        color: #aaa49c !important;
     }
-    /* Submit button */
     .stFormSubmitButton > button {
-        border-radius: 0 !important;
-        padding: 0.85rem 2rem !important;
-        font-family: 'Inter', sans-serif !important;
+        border-radius: 8px !important;
+        padding: 0.85rem !important;
+        font-family: 'DM Sans', sans-serif !important;
         font-weight: 500 !important;
-        font-size: 0.8rem !important;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        background: #2c2420 !important;
-        color: #ede8e2 !important;
+        font-size: 0.9rem !important;
+        letter-spacing: 0.05em;
+        background: #1a1a1a !important;
+        color: white !important;
         border: none !important;
-        transition: all 0.3s ease !important;
-        margin-top: 0.5rem !important;
+        transition: opacity 0.2s !important;
     }
-    .stFormSubmitButton > button:hover {
-        background: #4a3f38 !important;
-    }
-    /* Alert messages */
-    .stAlert {
-        border-radius: 0 !important;
-        font-family: 'Inter', sans-serif !important;
-    }
+    .stFormSubmitButton > button:hover { opacity: 0.85 !important; }
+    .stAlert { border-radius: 8px !important; font-family: 'DM Sans', sans-serif !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -166,35 +135,33 @@ def _inject_login_styles():
 def show_brand_login_page():
     _inject_login_styles()
 
-    col1, col2, col3 = st.columns([1.2, 1.6, 1.2])
+    col1, col2, col3 = st.columns([1.5, 1, 1.5])
 
     with col2:
-        st.markdown("<div style='height: 8rem'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 12vh'></div>", unsafe_allow_html=True)
         st.markdown("""
-        <div style="text-align: center; margin-bottom: 3rem;">
-            <p style="font-family: 'Inter', sans-serif; font-weight: 400; font-size: 0.7rem;
-                      letter-spacing: 0.25em; text-transform: uppercase; color: #8a7e74;
-                      margin-bottom: 1rem;">Cosduck Global</p>
-            <h1 style="font-family: 'Playfair Display', serif; font-weight: 400;
-                       font-size: 2.8rem; color: #2c2420; line-height: 1.15; margin: 0;">
-                Order<br>Analytics
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <h1 style="font-family: 'DM Serif Display', serif; font-weight: 400;
+                       font-size: 2rem; color: #1a1a1a; margin: 0 0 0.5rem 0;">
+                Order Analytics
             </h1>
-            <div style="width: 40px; height: 1.5px; background: #2c2420; margin: 1.5rem auto;"></div>
-            <p style="font-family: 'Inter', sans-serif; font-weight: 300; font-size: 0.9rem;
-                      color: #8a7e74; margin: 0;">Sign in to your brand dashboard</p>
+            <p style="font-family: 'DM Sans', sans-serif; font-weight: 300;
+                      font-size: 0.85rem; color: #888; margin: 0;">
+                Sign in to continue
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
         with st.form("brand_login_form"):
-            brand_name = st.text_input("Brand", placeholder="Enter your brand name")
-            password = st.text_input("Password", type="password", placeholder="Enter your password")
-            st.markdown("<div style='height: 1rem'></div>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("Continue", type="primary", use_container_width=True)
+            brand_name = st.text_input("Brand", placeholder="Brand name")
+            password = st.text_input("Password", type="password", placeholder="Password")
+            st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
 
         if submitted:
             if brand_name and password:
                 if brands_manager.is_brand_rate_limited(brand_name):
-                    st.error("Too many failed attempts. Please try again later.")
+                    st.error("Too many failed attempts. Try again later.")
                 else:
                     brand_data = brands_manager.authenticate_brand(brand_name, password)
                     if brand_data:
@@ -206,41 +173,39 @@ def show_brand_login_page():
                     else:
                         st.error("Invalid brand name or password")
             else:
-                st.warning("Please enter brand name and password")
+                st.warning("Enter brand name and password")
 
 
 # ===== ADMIN LOGIN PAGE =====
 def show_admin_login_page():
     _inject_login_styles()
 
-    col1, col2, col3 = st.columns([1.2, 1.6, 1.2])
+    col1, col2, col3 = st.columns([1.5, 1, 1.5])
 
     with col2:
-        st.markdown("<div style='height: 8rem'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 12vh'></div>", unsafe_allow_html=True)
         st.markdown("""
-        <div style="text-align: center; margin-bottom: 3rem;">
-            <p style="font-family: 'Inter', sans-serif; font-weight: 400; font-size: 0.7rem;
-                      letter-spacing: 0.25em; text-transform: uppercase; color: #8a7e74;
-                      margin-bottom: 1rem;">Cosduck Global</p>
-            <h1 style="font-family: 'Playfair Display', serif; font-weight: 400;
-                       font-size: 2.8rem; color: #2c2420; line-height: 1.15; margin: 0;">
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+            <h1 style="font-family: 'DM Serif Display', serif; font-weight: 400;
+                       font-size: 2rem; color: #1a1a1a; margin: 0 0 0.5rem 0;">
                 Admin
             </h1>
-            <div style="width: 40px; height: 1.5px; background: #2c2420; margin: 1.5rem auto;"></div>
-            <p style="font-family: 'Inter', sans-serif; font-weight: 300; font-size: 0.9rem;
-                      color: #8a7e74; margin: 0;">Enter your password to continue</p>
+            <p style="font-family: 'DM Sans', sans-serif; font-weight: 300;
+                      font-size: 0.85rem; color: #888; margin: 0;">
+                Enter your password to continue
+            </p>
         </div>
         """, unsafe_allow_html=True)
 
         with st.form("admin_login_form"):
-            password = st.text_input("Password", type="password", placeholder="Enter admin password")
-            st.markdown("<div style='height: 1rem'></div>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("Continue", type="primary", use_container_width=True)
+            password = st.text_input("Password", type="password", placeholder="Password")
+            st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
+            submitted = st.form_submit_button("Sign in", type="primary", use_container_width=True)
 
         if submitted:
             if password:
                 if brands_manager.is_admin_rate_limited():
-                    st.error("Too many failed attempts. Please try again later.")
+                    st.error("Too many failed attempts. Try again later.")
                 elif brands_manager.authenticate_admin(password):
                     st.session_state.authenticated = True
                     st.session_state.is_admin = True
@@ -248,7 +213,7 @@ def show_admin_login_page():
                 else:
                     st.error("Invalid password")
             else:
-                st.warning("Please enter password")
+                st.warning("Enter password")
 
 
 # ===== ADMIN PANEL =====
@@ -283,7 +248,11 @@ def show_admin_panel():
 
                     with col1:
                         st.write(f"**Sheet ID:** `{data.get('sheet_id', 'N/A')}`")
-                        st.write(f"**Password:** `{data.get('password', 'N/A')}`")
+                        pwd = data.get('password', 'N/A')
+                        if pwd.startswith('$2b$') or pwd.startswith('$2a$'):
+                            st.write("**Password:** (hashed) — click Reset Password to set a new one")
+                        else:
+                            st.write(f"**Password:** `{pwd}`")
                         if data.get('sheet_url'):
                             st.write(f"[Open Google Sheet]({data.get('sheet_url')})")
 
