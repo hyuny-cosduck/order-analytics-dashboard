@@ -802,7 +802,9 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         'Order Status': lambda x: (x.isin(('Canceled', 'Cancelled'))).sum()
     }).reset_index()
     price_stats.columns = ['가격대', '전체건수', '취소건수']
-    price_stats['취소율(%)'] = (price_stats['취소건수'] / price_stats['전체건수'] * 100).round(1)
+    price_stats['전체건수'] = pd.to_numeric(price_stats['전체건수'], errors='coerce').fillna(0)
+    price_stats['취소건수'] = pd.to_numeric(price_stats['취소건수'], errors='coerce').fillna(0)
+    price_stats['취소율(%)'] = (price_stats['취소건수'] / price_stats['전체건수'].replace(0, 1) * 100).round(1)
 
     col1, col2 = st.columns(2)
 
@@ -1193,25 +1195,27 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
+    _no_prev = "비교 기간 없음"
+
     with col1:
-        _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else None
-        st.metric(label="총 주문 수", value=f"{total_orders:,}건", delta=_d)
+        _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else _no_prev
+        st.metric(label="총 주문 수", value=f"{total_orders:,}건", delta=_d, delta_color="off" if d_orders is None else "normal")
         st.toggle("차트", value=True, key="kpi_주문수")
     with col2:
-        _d = f"{d_amount:+.1f}% (이전: {fmt_money(prev_total_amount, currency)})" if d_amount is not None else None
-        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency), delta=_d)
+        _d = f"{d_amount:+.1f}% (이전: {fmt_money(prev_total_amount, currency)})" if d_amount is not None else _no_prev
+        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency), delta=_d, delta_color="off" if d_amount is None else "normal")
         st.toggle("차트", value=False, key="kpi_매출")
     with col3:
-        _d = f"{d_cancel:+.1f}% (이전: {prev_cancel_count:,}건)" if d_cancel is not None else None
-        st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)", delta=_d, delta_color="inverse")
+        _d = f"{d_cancel:+.1f}% (이전: {prev_cancel_count:,}건)" if d_cancel is not None else _no_prev
+        st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)", delta=_d, delta_color="off" if d_cancel is None else "inverse")
         st.toggle("차트", value=True, key="kpi_취소수")
     with col4:
-        _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
-        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
+        _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else _no_prev
+        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="off" if d_cancel_amt is None else "inverse")
         st.toggle("차트", value=False, key="kpi_취소금액")
     with col5:
-        _d = f"{d_samples:+.1f}% (이전: {prev_sample_count:,}건)" if d_samples is not None else None
-        st.metric(label="샘플 발송", value=f"{sample_count:,}건 / {sample_qty:,}개", delta=_d)
+        _d = f"{d_samples:+.1f}% (이전: {prev_sample_count:,}건)" if d_samples is not None else _no_prev
+        st.metric(label="샘플 발송", value=f"{sample_count:,}건 / {sample_qty:,}개", delta=_d, delta_color="off" if d_samples is None else "normal")
         st.toggle("차트", value=True, key="kpi_샘플발송")
 
     # ===== KPI Daily Trend Chart =====
