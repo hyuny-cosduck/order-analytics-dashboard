@@ -409,9 +409,8 @@ def show_brand_dashboard():
     brand_name = st.session_state.brand_name
     brand_data = st.session_state.brand_data
     if not brand_data:
-        st.session_state.authenticated = False
-        st.rerun()
-        return
+        st.error("세션이 만료되었습니다. 다시 로그인해주세요.")
+        st.stop()
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
@@ -1264,16 +1263,16 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
 
 # ===== MAIN APP ROUTING =====
-if st.session_state.authenticated:
-    if st.session_state.is_admin:
-        show_admin_panel()
-    elif st.session_state.brand_data:
-        show_brand_dashboard()
-    else:
-        st.session_state.authenticated = False
-        st.rerun()
+if st.session_state.authenticated and st.session_state.is_admin:
+    show_admin_panel()
+elif st.session_state.authenticated and st.session_state.brand_data:
+    show_brand_dashboard()
+elif is_admin_route():
+    # Reset any stale state
+    st.session_state.authenticated = False
+    st.session_state.brand_data = None
+    show_admin_login_page()
 else:
-    if is_admin_route():
-        show_admin_login_page()
-    else:
-        show_brand_login_page()
+    st.session_state.authenticated = False
+    st.session_state.brand_data = None
+    show_brand_login_page()
