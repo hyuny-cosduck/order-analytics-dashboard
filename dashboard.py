@@ -1527,8 +1527,8 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             )
             fig_sku.update_layout(
                 xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': top_sku['번호'].tolist()},
-                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
-                margin=dict(t=50, b=30, l=10, r=10),
+                legend=dict(orientation='h', yanchor='bottom', y=-0.25, xanchor='center', x=0.5),
+                margin=dict(t=40, b=50, l=10, r=10),
             )
             st.plotly_chart(fig_sku, use_container_width=True)
 
@@ -1641,30 +1641,44 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             st.plotly_chart(fig_payment, use_container_width=True)
 
         with col2:
-            cod_methods = ['Cash on delivery', 'Cash']
-            cod_orders = order_info[order_info['Payment Method'].isin(cod_methods)]
-            non_cod_orders = order_info[~order_info['Payment Method'].isin(cod_methods)]
-
-            cod_cancel_rate = len(cod_orders[cod_orders['Order Status'].isin(('Canceled', 'Cancelled'))]) / len(cod_orders) * 100 if len(cod_orders) > 0 else 0
-            non_cod_cancel_rate = len(non_cod_orders[non_cod_orders['Order Status'].isin(('Canceled', 'Cancelled'))]) / len(non_cod_orders) * 100 if len(non_cod_orders) > 0 else 0
-
-            compare_df = pd.DataFrame({
-                '결제유형': ['COD/현금', '선결제'],
-                '주문수': [len(cod_orders), len(non_cod_orders)],
-                '취소율(%)': [cod_cancel_rate, non_cod_cancel_rate]
-            })
-
-            fig_compare = px.bar(
-                compare_df, x='결제유형', y='취소율(%)', title='COD vs 선결제 취소율 비교',
-                color='결제유형', color_discrete_map={'COD/현금': '#f44336', '선결제': '#4CAF50'}, text='취소율(%)'
+            # 사용자가 비교할 Payment Method 두 개 선택
+            all_methods = sorted(order_info['Payment Method'].dropna().unique().tolist())
+            default_methods = all_methods[:2] if len(all_methods) >= 2 else all_methods
+            selected_methods = st.multiselect(
+                "비교할 결제방식 선택 (2개)",
+                options=all_methods,
+                default=default_methods,
+                max_selections=2,
+                key="payment_compare_methods",
             )
-            fig_compare.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-            st.plotly_chart(fig_compare, use_container_width=True)
 
-            st.info(f"""
-            **COD/현금**: {len(cod_orders):,}건 (취소율 {cod_cancel_rate:.1f}%)
-            **선결제**: {len(non_cod_orders):,}건 (취소율 {non_cod_cancel_rate:.1f}%)
-            """)
+            if len(selected_methods) == 2:
+                group_a = order_info[order_info['Payment Method'] == selected_methods[0]]
+                group_b = order_info[order_info['Payment Method'] == selected_methods[1]]
+                rate_a = len(group_a[group_a['Order Status'].isin(('Canceled', 'Cancelled'))]) / len(group_a) * 100 if len(group_a) > 0 else 0
+                rate_b = len(group_b[group_b['Order Status'].isin(('Canceled', 'Cancelled'))]) / len(group_b) * 100 if len(group_b) > 0 else 0
+
+                compare_df = pd.DataFrame({
+                    '결제방식': [selected_methods[0], selected_methods[1]],
+                    '주문수': [len(group_a), len(group_b)],
+                    '취소율(%)': [rate_a, rate_b]
+                })
+                fig_compare = px.bar(
+                    compare_df, x='결제방식', y='취소율(%)', title='결제방식별 취소율 비교',
+                    color='결제방식', text='취소율(%)'
+                )
+                fig_compare.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+                fig_compare.update_layout(showlegend=False, margin=dict(t=40, b=30, l=10, r=10))
+                st.plotly_chart(fig_compare, use_container_width=True)
+
+                st.info(f"""
+                **{selected_methods[0]}**: {len(group_a):,}건 (취소율 {rate_a:.1f}%)
+                **{selected_methods[1]}**: {len(group_b):,}건 (취소율 {rate_b:.1f}%)
+                """)
+            elif len(selected_methods) == 1:
+                st.warning("비교를 위해 결제방식을 2개 선택해주세요.")
+            else:
+                st.info("비교할 결제방식을 선택해주세요.")
 
         with st.expander("Payment Method별 상세 데이터"):
             payment_display = payment_df.copy()
