@@ -91,14 +91,12 @@ def _inject_global_styles():
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
-    header[data-testid="stHeader"] { display: none !important; }
-    .stMainBlockContainer { padding-top: 0 !important; }
+    header[data-testid="stHeader"] { background: white !important; border-bottom: 1px solid #e2e2ea; }
 
     /* Typography */
-    h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.6rem !important; }
-    h2 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 1.15rem !important; }
-    h3 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 1rem !important; }
-    p, span, label, div { font-family: 'Inter', sans-serif; }
+    h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.4rem !important; }
+    h2 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 1.1rem !important; }
+    h3 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 0.95rem !important; }
 
     /* Inputs */
     .stTextInput > label, .stSelectbox > label, .stDateInput label, .stFileUploader > label {
@@ -179,9 +177,11 @@ def _inject_global_styles():
 
     /* Plotly charts */
     [data-testid="stPlotlyChart"] {
-        background: white; border-radius: 12px; padding: 0.75rem;
-        border: 1px solid #e2e2ea;
+        background: white; border-radius: 12px; padding: 0.5rem;
+        border: 1px solid #e2e2ea; overflow-x: auto;
     }
+    [data-testid="stPlotlyChart"] .js-plotly-plot { width: 100% !important; }
+    [data-testid="stPlotlyChart"] .plotly { width: 100% !important; }
 
     /* Hide anchor links */
     a.stHeaderLink, h1 a, h2 a { display: none !important; }
@@ -189,11 +189,11 @@ def _inject_global_styles():
     /* Dividers */
     hr { border-color: #e2e2ea !important; }
 
-    /* Reset login-specific styles on non-login pages */
+    /* Forms */
     [data-testid="stForm"] {
-        border: 1px solid #e2e2ea !important; padding: 1rem !important;
-        background: transparent !important; border-radius: 8px !important;
-        box-shadow: none !important;
+        border: 1px solid #e2e2ea !important; padding: 1.5rem !important;
+        background: white !important; border-radius: 12px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
     }
 
     /* Caption / footer text */
@@ -202,24 +202,9 @@ def _inject_global_styles():
     """, unsafe_allow_html=True)
 
 
-# ===== LOGIN-ONLY STYLES =====
-def _inject_login_styles():
-    _inject_global_styles()
-    st.markdown("""
-    <style>
-    .stMainBlockContainer { padding-top: 0 !important; }
-    [data-testid="stForm"] {
-        border: none !important; padding: 2rem !important;
-        background: white !important; border-radius: 12px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06) !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-
 # ===== BRAND LOGIN PAGE =====
 def show_brand_login_page():
-    _inject_login_styles()
+    _inject_global_styles()
 
     col1, col2, col3 = st.columns([1.3, 1.4, 1.3])
 
@@ -268,7 +253,7 @@ def show_brand_login_page():
 
 # ===== ADMIN LOGIN PAGE =====
 def show_admin_login_page():
-    _inject_login_styles()
+    _inject_global_styles()
 
     col1, col2, col3 = st.columns([1.3, 1.4, 1.3])
 
@@ -457,36 +442,10 @@ def show_brand_dashboard():
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
-    # Sticky header + tabs
-    st.markdown("""
-    <style>
-    .brand-sticky-header {
-        position: fixed; top: 0; left: 0; right: 0; z-index: 999;
-        background: white; border-bottom: 1px solid #e2e2ea;
-        padding: 0.75rem 2rem 0 2rem;
-    }
-    .brand-sticky-header h1 {
-        font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1.2rem;
-        color: #1e1e2e; margin: 0;
-    }
-    .brand-sticky-header .header-row {
-        display: flex; align-items: center; justify-content: space-between;
-        margin-bottom: 0.5rem;
-    }
-    /* Push content below sticky header */
-    .stMainBlockContainer > [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"]:first-child {
-        margin-top: 3.5rem !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Header row
+    # Header
     col1, col2 = st.columns([6, 1])
     with col1:
-        st.markdown(f"""
-        <h1 style="font-family: 'Inter', sans-serif; font-weight: 700; font-size: 1.3rem;
-                   color: #1e1e2e; margin: 0; padding: 0.5rem 0;">{brand_name} Order Analytics</h1>
-        """, unsafe_allow_html=True)
+        st.title(f"{brand_name}")
     with col2:
         if st.button("Logout", type="secondary", use_container_width=True):
             logout()
