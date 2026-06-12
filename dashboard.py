@@ -171,7 +171,7 @@ def show_admin_panel():
 
                     with col1:
                         st.write(f"**Sheet ID:** `{data.get('sheet_id', 'N/A')}`")
-                        st.write("**Password:** (hashed — reset to see new password)")
+                        st.write(f"**Password:** `{data.get('password', 'N/A')}`")
                         if data.get('sheet_url'):
                             st.write(f"[Open Google Sheet]({data.get('sheet_url')})")
 

@@ -51,17 +51,11 @@ def _save_brands(brands: Dict) -> None:
     sheets_manager.save_brands_to_sheet(brands)
 
 
-def _hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
-    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-
-
-def _verify_password(password: str, hashed: str) -> bool:
-    """Verify a password against a bcrypt hash. Also accepts legacy plaintext."""
-    if hashed.startswith('$2b$') or hashed.startswith('$2a$'):
-        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
-    # Legacy plaintext comparison — will be upgraded on successful login
-    return password == hashed
+def _verify_password(password: str, stored: str) -> bool:
+    """Verify a password against stored value (plaintext or legacy bcrypt)."""
+    if stored.startswith('$2b$') or stored.startswith('$2a$'):
+        return bcrypt.checkpw(password.encode('utf-8'), stored.encode('utf-8'))
+    return password == stored
 
 
 def generate_password(brand_name: str = "") -> str:
@@ -107,14 +101,6 @@ def authenticate_brand(brand_name: str, password: str) -> Optional[Dict]:
         _record_failed_attempt(key)
         return None
     _clear_failed_attempts(key)
-    # Auto-upgrade plaintext → bcrypt
-    if not (stored.startswith('$2b$') or stored.startswith('$2a$')):
-        brands = _load_brands()
-        for name in brands:
-            if name.lower() == brand_name.lower():
-                brands[name]['password'] = _hash_password(password)
-                _save_brands(brands)
-                break
     return brand
 
 
@@ -152,19 +138,17 @@ def add_brand(brand_name: str, currency: str = "Rp") -> Tuple[Optional[Dict], Op
     # Generate password with brand name
     raw_password = generate_password(brand_name)
 
-    # Store brand data with hashed password
     brand_data = {
         'sheet_id': sheet_id,
         'sheet_url': sheet_url,
-        'password': _hash_password(raw_password),
+        'password': raw_password,
         'currency': currency,
     }
 
     brands[brand_name] = brand_data
     _save_brands(brands)
 
-    # Return plaintext password for one-time display to admin
-    return {**brand_data, 'name': brand_name, 'password': raw_password}, None
+    return {**brand_data, 'name': brand_name}, None
 
 
 def update_brand_password(brand_name: str, new_password: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
@@ -188,7 +172,7 @@ def update_brand_password(brand_name: str, new_password: Optional[str] = None) -
     if new_password is None:
         new_password = generate_password(actual_name)
 
-    brands[actual_name]['password'] = _hash_password(new_password)
+    brands[actual_name]['password'] = new_password
     _save_brands(brands)
 
     # Return plaintext for one-time display to admin
@@ -247,11 +231,10 @@ def import_existing_sheet(brand_name: str, sheet_id: str, currency: str = "Rp") 
     # Generate password with brand name
     raw_password = generate_password(brand_name)
 
-    # Store brand data with hashed password
     brand_data = {
         'sheet_id': sheet_id,
         'sheet_url': f"https://docs.google.com/spreadsheets/d/{sheet_id}",
-        'password': _hash_password(raw_password),
+        'password': raw_password,
         'currency': currency,
     }
 
