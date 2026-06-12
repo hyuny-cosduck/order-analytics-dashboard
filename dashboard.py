@@ -1637,7 +1637,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                 payment_df.head(10), x='Payment Method', y='전체주문수',
                 title='Payment Method별 주문 수', color='취소율(%)', color_continuous_scale='RdYlGn_r'
             )
-            fig_payment.update_layout(xaxis_tickangle=-45)
+            fig_payment.update_layout(xaxis_tickangle=-45, height=400, margin=dict(t=40, b=30, l=10, r=10))
             st.plotly_chart(fig_payment, use_container_width=True)
 
         with col2:
@@ -1668,7 +1668,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                     color='결제방식', text='취소율(%)'
                 )
                 fig_compare.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-                fig_compare.update_layout(showlegend=False, margin=dict(t=40, b=30, l=10, r=10))
+                fig_compare.update_layout(showlegend=False, height=300, margin=dict(t=40, b=30, l=10, r=10))
                 st.plotly_chart(fig_compare, use_container_width=True)
 
                 st.info(f"""
