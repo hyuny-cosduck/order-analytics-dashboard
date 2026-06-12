@@ -1204,9 +1204,23 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     d_cancel = _pct_change(cancel_count, prev_cancel_count)
     d_cancel_amt = _pct_change(cancel_amount, prev_cancel_amount)
 
-    col1, col2, col3, col4 = st.columns(4)
+    # Sample counts for current & previous period
+    sample_count = samples_df['Order ID'].nunique() if len(samples_df) > 0 else 0
+    sample_qty = int(samples_df['Quantity'].sum()) if len(samples_df) > 0 and 'Quantity' in samples_df.columns else 0
+    if len(df_prev) > 0 and 'Order Amount' in df_all.columns:
+        samples_all = df_all[df_all.get('Order Amount', pd.Series(dtype=float)).apply(pd.to_numeric, errors='coerce') == 0]
+        if 'Created Date' in samples_all.columns:
+            prev_samples = samples_all[(samples_all['Created Date'] >= prev_start) & (samples_all['Created Date'] <= prev_end)]
+            prev_sample_count = prev_samples['Order ID'].nunique() if len(prev_samples) > 0 else 0
+        else:
+            prev_sample_count = 0
+    else:
+        prev_sample_count = 0
+    d_samples = _pct_change(sample_count, prev_sample_count)
 
     prev_cancel_rate = prev_cancel_count / prev_total_orders * 100 if prev_total_orders > 0 else 0
+
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else None
@@ -1220,6 +1234,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col4:
         _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
         st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
+    with col5:
+        _d = f"{d_samples:+.1f}% (이전: {prev_sample_count:,}건)" if d_samples is not None else None
+        st.metric(label="샘플 발송", value=f"{sample_count:,}건 / {sample_qty:,}개", delta=_d)
 
     # ===== KPI Daily Trend Chart =====
     kpi_daily = order_info.groupby('Created Date').agg(
