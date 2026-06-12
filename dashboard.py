@@ -467,7 +467,7 @@ def show_brand_dashboard():
     else:
         _data_info = ""
 
-    # Fixed header (title + logout + tabs — all pure HTML)
+    # Fixed header (title + logout + refresh — pure HTML)
     st.markdown(f"""
     <style>
     .brand-header {{
@@ -475,60 +475,41 @@ def show_brand_dashboard():
         top: 0; left: 0; right: 0;
         z-index: 999;
         background: white;
+        border-bottom: 1px solid #e2e2ea;
         transition: box-shadow 0.2s ease;
     }}
-    .brand-header-title {{
+    .brand-header-inner {{
         display: flex; align-items: center; justify-content: space-between;
-        padding: 1rem 2rem 0.75rem;
+        padding: 0.75rem 2rem;
     }}
-    .brand-header-title h1 {{
+    .brand-header h1 {{
         font-family: 'Inter', sans-serif; font-weight: 700;
-        font-size: 1.25rem; color: #1e1e2e; margin: 0;
+        font-size: 1.15rem; color: #1e1e2e; margin: 0;
     }}
-    .brand-header .logout-link, .brand-header .refresh-link {{
+    .brand-header-actions {{ display: flex; align-items: center; gap: 10px; }}
+    .brand-header-actions a {{
         padding: 5px 14px; font-size: 0.8rem; font-family: 'Inter', sans-serif;
         color: #1e1e2e; background: white; border: 1px solid #e2e2ea;
         border-radius: 8px; cursor: pointer; text-decoration: none; font-weight: 500;
     }}
-    .brand-header .logout-link:hover, .brand-header .refresh-link:hover {{ background: #f4f4f8; }}
-    .brand-header-tabs {{
-        display: flex; gap: 0; padding: 0 2rem;
-        border-bottom: 1px solid #e2e2ea;
+    .brand-header-actions a:hover {{ background: #f4f4f8; }}
+    .brand-header-actions .data-info {{
+        font-size: 0.75rem; color: #8888a0; font-family: 'Inter', sans-serif;
     }}
-    .brand-header-tabs .htab {{
-        display: inline-flex; align-items: center; gap: 4px;
-        padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 500;
-        font-family: 'Inter', sans-serif; color: #64648c;
-        text-decoration: none; border-bottom: 2px solid transparent; cursor: pointer;
-    }}
-    .brand-header-tabs .htab:hover {{ color: #1e1e2e; }}
-    .brand-header-tabs .htab.active {{ color: #6366f1; border-bottom-color: #6366f1; }}
-    .stMainBlockContainer {{ padding-top: 7rem !important; }}
-
-    /* Hide Streamlit's native tab bar visually but keep it clickable */
-    .stTabs [data-baseweb="tab-list"] {{ height: 0 !important; overflow: hidden !important; opacity: 0 !important; }}
-    .stTabs [data-baseweb="tab-border"] {{ display: none !important; }}
-    .stTabs [data-baseweb="tab-highlight"] {{ display: none !important; }}
-    .stTabs {{ border: none !important; }}
+    .stMainBlockContainer {{ padding-top: 3.5rem !important; }}
     </style>
     <div class="brand-header" id="brand-header">
-        <div class="brand-header-title">
+        <div class="brand-header-inner">
             <h1>{brand_name} Order Analytics</h1>
-            <a class="logout-link" id="logout-link">Logout</a>
-        </div>
-        <nav class="brand-header-tabs" id="header-tabs">
-            <a class="htab active" data-tab="0">📈 Dashboard</a>
-            <a class="htab" data-tab="1">📦 번들 분석</a>
-            <a class="htab" data-tab="2">📤 Upload Data</a>
-            <div style="margin-left:auto; display:flex; align-items:center; gap:12px;">
-                <a class="refresh-link" id="refresh-link">↻ 새로고침</a>
-                <span style="font-size:0.75rem; color:#8888a0; font-family:'Inter',sans-serif;">{_data_info}</span>
+            <div class="brand-header-actions">
+                <span class="data-info">{_data_info}</span>
+                <a id="refresh-link">↻ 새로고침</a>
+                <a id="logout-link">Logout</a>
             </div>
-        </nav>
+        </div>
     </div>
     <script>
     (function() {{
-        // Scroll shadow
         const bh = document.getElementById('brand-header');
         if (bh) {{
             window.addEventListener('scroll', () => {{
@@ -536,36 +517,17 @@ def show_brand_dashboard():
                     ? '0 4px 12px rgba(0,0,0,0.06)' : 'none';
             }}, {{ passive: true }});
         }}
-        // Tab switching — click the hidden Streamlit tabs
-        document.querySelectorAll('.htab').forEach(tab => {{
-            tab.addEventListener('click', () => {{
-                const idx = parseInt(tab.dataset.tab);
-                const stTabs = document.querySelectorAll('[data-baseweb="tab"]');
-                if (stTabs[idx]) stTabs[idx].click();
-                // Update active state
-                document.querySelectorAll('.htab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-            }});
+        document.getElementById('logout-link')?.addEventListener('click', () => {{
+            window.location.search = '?action=logout';
         }});
-        // Logout — navigate with query param
-        const logoutLink = document.getElementById('logout-link');
-        if (logoutLink) {{
-            logoutLink.addEventListener('click', () => {{
-                window.location.search = '?action=logout';
-            }});
-        }}
-        // Refresh — navigate with query param
-        const refreshLink = document.getElementById('refresh-link');
-        if (refreshLink) {{
-            refreshLink.addEventListener('click', () => {{
-                window.location.search = '?action=refresh';
-            }});
-        }}
+        document.getElementById('refresh-link')?.addEventListener('click', () => {{
+            window.location.search = '?action=refresh';
+        }});
     }})();
     </script>
     """, unsafe_allow_html=True)
 
-    # Handle header actions via query params (set by JS)
+    # Handle header actions via query params
     _action = st.query_params.get("action", "")
     if _action == "logout":
         st.query_params.clear()
@@ -578,7 +540,7 @@ def show_brand_dashboard():
                 del st.session_state[key]
         st.rerun()
 
-    # Streamlit tabs (tab-list hidden by CSS, controlled by HTML header tabs)
+    # Streamlit native tabs — fully visible and functional
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
 
     with tab1:
