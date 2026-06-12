@@ -886,6 +886,10 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
     col_month, col_range = st.columns([1, 2])
 
+    # Apply pending month selection from quick buttons (before widget instantiation)
+    if '_pending_month_sel' in st.session_state:
+        st.session_state['main_month_sel'] = st.session_state.pop('_pending_month_sel')
+
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
         selected_month = st.selectbox(
@@ -937,7 +941,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
     def _queue_range(start, end):
-        st.session_state['main_month_sel'] = "전체 기간"
+        st.session_state['_pending_month_sel'] = "전체 기간"
         st.session_state['_pending_main_range'] = (start, end)
         st.rerun()
 
