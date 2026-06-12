@@ -154,6 +154,9 @@ def show_brand_login_page():
         st.markdown("<div style='height: 10vh'></div>", unsafe_allow_html=True)
         st.markdown("""
         <div style="text-align: center; margin-bottom: 2rem;">
+            <p style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 0.75rem;
+                      letter-spacing: 0.15em; text-transform: uppercase; color: #8888a0;
+                      margin: 0 0 0.75rem 0;">Cosduck</p>
             <h2 style="font-family: 'Inter', sans-serif; font-weight: 600;
                        font-size: 1.35rem; color: #1e1e2e; margin: 0 0 0.3rem 0;">
                 Orders Dashboard
