@@ -108,7 +108,8 @@ def _inject_global_styles():
     .stSelectbox > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
     .stSelectbox > div > div { color: #1e1e2e !important; }
     .stSelectbox [data-baseweb="select"] > div { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; }
-    .stDateInput > div > div > input { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; color: #1e1e2e !important; }
+    .stDateInput > div > div > input { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; color: #1e1e2e !important; font-weight: 500 !important; }
+    .stDateInput label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
 
     /* Buttons */
     .stButton > button, .stFormSubmitButton > button {
