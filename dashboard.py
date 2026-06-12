@@ -446,7 +446,7 @@ def show_brand_dashboard():
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
-    # Fixed header bar (pure HTML/CSS — always visible at top)
+    # Fixed header (title + logout + tabs — all pure HTML)
     st.markdown(f"""
     <style>
     .brand-header {{
@@ -454,43 +454,92 @@ def show_brand_dashboard():
         top: 0; left: 0; right: 0;
         z-index: 999;
         background: white;
-        border-bottom: 1px solid #e2e2ea;
-        padding: 0.9rem 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         transition: box-shadow 0.2s ease;
     }}
-    .brand-header h1 {{
-        font-family: 'Inter', sans-serif;
-        font-weight: 700;
-        font-size: 1.2rem;
-        color: #1e1e2e;
-        margin: 0;
+    .brand-header-title {{
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1rem 2rem 0.75rem;
     }}
-    .stMainBlockContainer {{ padding-top: 3.5rem !important; }}
+    .brand-header-title h1 {{
+        font-family: 'Inter', sans-serif; font-weight: 700;
+        font-size: 1.25rem; color: #1e1e2e; margin: 0;
+    }}
+    .brand-header .logout-link {{
+        padding: 6px 16px; font-size: 0.85rem; font-family: 'Inter', sans-serif;
+        color: #1e1e2e; background: white; border: 1px solid #e2e2ea;
+        border-radius: 8px; cursor: pointer; text-decoration: none;
+    }}
+    .brand-header .logout-link:hover {{ background: #f4f4f8; }}
+    .brand-header-tabs {{
+        display: flex; gap: 0; padding: 0 2rem;
+        border-bottom: 1px solid #e2e2ea;
+    }}
+    .brand-header-tabs .htab {{
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 0.6rem 1.2rem; font-size: 0.85rem; font-weight: 500;
+        font-family: 'Inter', sans-serif; color: #64648c;
+        text-decoration: none; border-bottom: 2px solid transparent; cursor: pointer;
+    }}
+    .brand-header-tabs .htab:hover {{ color: #1e1e2e; }}
+    .brand-header-tabs .htab.active {{ color: #6366f1; border-bottom-color: #6366f1; }}
+    .stMainBlockContainer {{ padding-top: 7rem !important; }}
+
+    /* Hide Streamlit's native tabs since we use HTML tabs */
+    .stTabs [data-baseweb="tab-list"] {{ display: none !important; }}
     </style>
     <div class="brand-header" id="brand-header">
-        <h1>{brand_name} Order Analytics</h1>
+        <div class="brand-header-title">
+            <h1>{brand_name} Order Analytics</h1>
+            <a class="logout-link" id="logout-link">Logout</a>
+        </div>
+        <nav class="brand-header-tabs" id="header-tabs">
+            <a class="htab active" data-tab="0">📈 Dashboard</a>
+            <a class="htab" data-tab="1">📦 번들 분석</a>
+            <a class="htab" data-tab="2">📤 Upload Data</a>
+        </nav>
     </div>
     <script>
-    const bh = document.getElementById('brand-header');
-    if (bh) {{
-        window.addEventListener('scroll', () => {{
-            bh.style.boxShadow = window.scrollY > 4
-                ? '0 4px 12px rgba(0,0,0,0.06)' : 'none';
-        }}, {{ passive: true }});
-    }}
+    (function() {{
+        // Scroll shadow
+        const bh = document.getElementById('brand-header');
+        if (bh) {{
+            window.addEventListener('scroll', () => {{
+                bh.style.boxShadow = window.scrollY > 4
+                    ? '0 4px 12px rgba(0,0,0,0.06)' : 'none';
+            }}, {{ passive: true }});
+        }}
+        // Tab switching — click the hidden Streamlit tabs
+        document.querySelectorAll('.htab').forEach(tab => {{
+            tab.addEventListener('click', () => {{
+                const idx = parseInt(tab.dataset.tab);
+                const stTabs = document.querySelectorAll('[data-baseweb="tab"]');
+                if (stTabs[idx]) stTabs[idx].click();
+                // Update active state
+                document.querySelectorAll('.htab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+            }});
+        }});
+        // Logout — find and click the hidden Streamlit logout button
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {{
+            logoutLink.addEventListener('click', () => {{
+                const buttons = document.querySelectorAll('button');
+                for (const btn of buttons) {{
+                    if (btn.textContent.trim() === 'Logout') {{ btn.click(); return; }}
+                }}
+            }});
+        }}
+    }})();
     </script>
     """, unsafe_allow_html=True)
 
-    # Logout button (Streamlit widget — sits below fixed header)
-    _, logout_col = st.columns([8, 1])
-    with logout_col:
-        if st.button("Logout", type="secondary", use_container_width=True):
-            logout()
+    # Hidden Streamlit logout button (clicked by JS)
+    st.markdown("<div style='display:none'>", unsafe_allow_html=True)
+    if st.button("Logout", key="hidden_logout"):
+        logout()
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    # Tabs
+    # Hidden Streamlit tabs (visually hidden, controlled by JS)
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
 
     with tab1:
