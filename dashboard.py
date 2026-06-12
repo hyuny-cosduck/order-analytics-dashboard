@@ -1358,37 +1358,30 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         with _t1:
             show_prev_pie = st.toggle("비교", value=False, key="cmp_status_pie") if has_prev else False
 
+        # Always build the main donut the same way
+        fig_status = px.pie(
+            status_dist, values='Count', names='Order Status', hole=0.4,
+            color_discrete_sequence=px.colors.qualitative.Set2
+        )
+        fig_status.update_traces(textposition='inside', textinfo='percent+label')
+
         if show_prev_pie:
-            fig_status = go.Figure()
-            # Main donut (right side, bigger)
-            fig_status.add_trace(go.Pie(
-                labels=status_dist['Order Status'], values=status_dist['Count'],
-                hole=0.4, textposition='inside', textinfo='percent+label',
-                marker=dict(colors=[color_map.get(s, '#ccc') for s in status_dist['Order Status']]),
-                showlegend=True, name='현재',
-                domain=dict(x=[0.3, 1.0], y=[0.0, 1.0]),
-            ))
-            # Previous donut (left-bottom, smaller)
+            # Shrink main donut to right side, add previous donut in bottom-left
+            fig_status.update_traces(domain=dict(x=[0.3, 1.0], y=[0.0, 1.0]))
             fig_status.add_trace(go.Pie(
                 labels=prev_status['Order Status'], values=prev_status['Count'],
                 hole=0.4, textposition='inside', textinfo='percent',
                 marker=dict(colors=[color_map.get(s, '#ccc') for s in prev_status['Order Status']]),
-                showlegend=False, name='이전',
+                showlegend=False,
                 domain=dict(x=[0.0, 0.35], y=[0.05, 0.65]),
             ))
             fig_status.add_annotation(x=0.175, y=0.0, text="이전", showarrow=False,
                                       font=dict(size=11, color="#64648c"))
-            fig_status.update_layout(
-                height=320, margin=dict(t=10, b=25, l=0, r=0),
-                legend=dict(orientation='h', yanchor='bottom', y=-0.1, xanchor='center', x=0.65),
-            )
+            fig_status.update_layout(height=320, margin=dict(t=10, b=25, l=0, r=0),
+                                     legend=dict(orientation='h', yanchor='bottom', y=-0.1, xanchor='center', x=0.65))
         else:
-            fig_status = px.pie(
-                status_dist, values='Count', names='Order Status', hole=0.4,
-                color_discrete_sequence=px.colors.qualitative.Set2
-            )
-            fig_status.update_traces(textposition='inside', textinfo='percent+label')
             fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
+
         st.plotly_chart(fig_status, use_container_width=True)
 
     with col2:
