@@ -1346,19 +1346,23 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     else:
         prev_status = pd.DataFrame(columns=['Order Status', 'Count', 'Amount'])
 
+    colors = px.colors.qualitative.Set2
+    all_statuses = list(status_dist['Order Status'].unique())
+    color_map = {s: colors[i % len(colors)] for i, s in enumerate(all_statuses)}
+    has_prev = len(prev_status) > 0
+
     with col1:
-        st.subheader("Order Status 분포")
+        _h1, _t1 = st.columns([4, 1])
+        with _h1:
+            st.subheader("Order Status 분포")
+        with _t1:
+            show_prev_pie = st.toggle("비교", value=False, key="cmp_status_pie") if has_prev else False
 
-        if len(prev_status) > 0:
-            # Two donuts in one chart: current (left, bigger) + previous (right, smaller)
-            colors = px.colors.qualitative.Set2
-            all_statuses = list(status_dist['Order Status'].unique())
-            color_map = {s: colors[i % len(colors)] for i, s in enumerate(all_statuses)}
-
+        if show_prev_pie:
             fig_status = make_subplots(
                 rows=1, cols=2, specs=[[{"type": "pie"}, {"type": "pie"}]],
                 subplot_titles=["현재", "이전"],
-                column_widths=[0.6, 0.4],
+                column_widths=[0.55, 0.45],
             )
             fig_status.add_trace(go.Pie(
                 labels=status_dist['Order Status'], values=status_dist['Count'],
@@ -1368,13 +1372,12 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             ), row=1, col=1)
             fig_status.add_trace(go.Pie(
                 labels=prev_status['Order Status'], values=prev_status['Count'],
-                hole=0.4, textposition='inside', textinfo='percent',
+                hole=0.4, textposition='inside', textinfo='percent+label',
                 marker=dict(colors=[color_map.get(s, '#ccc') for s in prev_status['Order Status']]),
                 showlegend=False,
             ), row=1, col=2)
             fig_status.update_annotations(font_size=11, font_color="#64648c")
-            fig_status.update_layout(height=300, margin=dict(t=30, b=10, l=10, r=10))
-            st.plotly_chart(fig_status, use_container_width=True)
+            fig_status.update_layout(height=300, margin=dict(t=30, b=10, l=0, r=0))
         else:
             fig_status = px.pie(
                 status_dist, values='Count', names='Order Status', hole=0.4,
@@ -1382,19 +1385,21 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             )
             fig_status.update_traces(textposition='inside', textinfo='percent+label')
             fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
-            st.plotly_chart(fig_status, use_container_width=True)
+        st.plotly_chart(fig_status, use_container_width=True)
 
     with col2:
-        st.subheader("💰 Status별 금액")
+        _h2, _t2 = st.columns([4, 1])
+        with _h2:
+            st.subheader("💰 Status별 금액")
+        with _t2:
+            show_prev_bar = st.toggle("비교", value=False, key="cmp_status_bar") if has_prev else False
 
-        if len(prev_status) > 0:
-            # Grouped bar: current vs previous
+        if show_prev_bar:
             bar_cur = status_dist[['Order Status', 'Amount']].copy()
             bar_cur['기간'] = '현재'
             bar_prev = prev_status[['Order Status', 'Amount']].copy()
             bar_prev['기간'] = '이전'
             bar_combined = pd.concat([bar_cur, bar_prev], ignore_index=True)
-
             fig_amount = px.bar(
                 bar_combined, x='Order Status', y='Amount', color='기간',
                 barmode='group', text_auto='.2s',
@@ -1402,14 +1407,13 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             )
             fig_amount.update_layout(height=300, margin=dict(t=10, b=30, l=10, r=10),
                                      legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0))
-            st.plotly_chart(fig_amount, use_container_width=True)
         else:
             fig_amount = px.bar(
                 status_dist, x='Order Status', y='Amount', color='Order Status',
                 text_auto='.2s', color_discrete_sequence=px.colors.qualitative.Set2
             )
             fig_amount.update_layout(showlegend=False, height=300, margin=dict(t=10, b=30, l=10, r=10))
-            st.plotly_chart(fig_amount, use_container_width=True)
+        st.plotly_chart(fig_amount, use_container_width=True)
 
     st.markdown("---")
 
