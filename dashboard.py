@@ -1138,8 +1138,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         if st.button("최근 6개월", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=180), max_date)
 
-    # Keep unfiltered df for previous period comparison
+    # Keep unfiltered copies for previous period comparison
     df_all = df.copy()
+    samples_all = samples_df.copy() if len(samples_df) > 0 else pd.DataFrame()
 
     # Apply date filter
     df = df[(df['Created Date'] >= start_date) & (df['Created Date'] <= end_date)]
@@ -1207,13 +1208,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     # Sample counts for current & previous period
     sample_count = samples_df['Order ID'].nunique() if len(samples_df) > 0 else 0
     sample_qty = int(samples_df['Quantity'].sum()) if len(samples_df) > 0 and 'Quantity' in samples_df.columns else 0
-    if len(df_prev) > 0 and 'Order Amount' in df_all.columns:
-        samples_all = df_all[df_all.get('Order Amount', pd.Series(dtype=float)).apply(pd.to_numeric, errors='coerce') == 0]
-        if 'Created Date' in samples_all.columns:
-            prev_samples = samples_all[(samples_all['Created Date'] >= prev_start) & (samples_all['Created Date'] <= prev_end)]
-            prev_sample_count = prev_samples['Order ID'].nunique() if len(prev_samples) > 0 else 0
-        else:
-            prev_sample_count = 0
+    if len(samples_all) > 0 and 'Created Date' in samples_all.columns:
+        prev_samples = samples_all[(samples_all['Created Date'] >= prev_start) & (samples_all['Created Date'] <= prev_end)]
+        prev_sample_count = prev_samples['Order ID'].nunique() if len(prev_samples) > 0 else 0
     else:
         prev_sample_count = 0
     d_samples = _pct_change(sample_count, prev_sample_count)
@@ -1225,18 +1222,23 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col1:
         _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else None
         st.metric(label="총 주문 수", value=f"{total_orders:,}건", delta=_d)
+        st.checkbox("📈", value=True, key="kpi_주문수", label_visibility="visible")
     with col2:
         _d = f"{d_amount:+.1f}% (이전: {fmt_money(prev_total_amount, currency)})" if d_amount is not None else None
         st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency), delta=_d)
+        st.checkbox("📈", value=False, key="kpi_매출", label_visibility="visible")
     with col3:
         _d = f"{d_cancel:+.1f}% (이전: {prev_cancel_count:,}건)" if d_cancel is not None else None
         st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)", delta=_d, delta_color="inverse")
+        st.checkbox("📈", value=True, key="kpi_취소수", label_visibility="visible")
     with col4:
         _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
         st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
+        st.checkbox("📈", value=False, key="kpi_취소금액", label_visibility="visible")
     with col5:
         _d = f"{d_samples:+.1f}% (이전: {prev_sample_count:,}건)" if d_samples is not None else None
         st.metric(label="샘플 발송", value=f"{sample_count:,}건 / {sample_qty:,}개", delta=_d)
+        st.checkbox("📈", value=True, key="kpi_샘플발송", label_visibility="visible")
 
     # ===== KPI Daily Trend Chart =====
     kpi_daily = order_info.groupby('Created Date').agg(
@@ -1260,13 +1262,13 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     else:
         kpi_daily['샘플발송'] = 0
 
-    available_metrics = ["주문수", "매출", "취소수", "취소금액", "샘플발송"]
-    kpi_metrics = st.multiselect(
-        "지표 선택",
-        options=available_metrics,
-        default=["주문수", "취소수", "샘플발송"],
-        key="kpi_chart_metrics",
-    )
+    # Build metric list from card checkboxes
+    kpi_metrics = []
+    if st.session_state.get("kpi_주문수"): kpi_metrics.append("주문수")
+    if st.session_state.get("kpi_매출"): kpi_metrics.append("매출")
+    if st.session_state.get("kpi_취소수"): kpi_metrics.append("취소수")
+    if st.session_state.get("kpi_취소금액"): kpi_metrics.append("취소금액")
+    if st.session_state.get("kpi_샘플발송"): kpi_metrics.append("샘플발송")
 
     if kpi_metrics:
         colors = {"주문수": "#6366f1", "매출": "#22c55e", "취소수": "#ef4444", "취소금액": "#f97316", "샘플발송": "#a855f7"}
