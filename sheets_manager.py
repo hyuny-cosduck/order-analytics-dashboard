@@ -360,7 +360,8 @@ def load_brands_from_sheet() -> Dict:
                 }
         return brands
     except Exception as e:
-        print(f"Error loading brands from sheet: {e}")
+        import streamlit as st
+        st.error(f"브랜드 데이터 로딩 실패: {e}")
         return {}
 
 

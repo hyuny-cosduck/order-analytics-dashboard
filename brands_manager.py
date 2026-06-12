@@ -92,16 +92,12 @@ def authenticate_brand(brand_name: str, password: str) -> Optional[Dict]:
     """
     key = f"brand:{brand_name.strip().lower()}"
     if _is_rate_limited(key):
-        print(f"[AUTH] Rate limited: {key}")
         return None
     brand = get_brand(brand_name)
     if not brand:
-        print(f"[AUTH] Brand not found: '{brand_name}'")
-        print(f"[AUTH] Available brands: {list(_load_brands().keys())}")
         _record_failed_attempt(key)
         return None
     stored = brand.get('password', '')
-    print(f"[AUTH] Brand '{brand_name}' found. Stored pw: '{stored}', Input pw: '{password}', Match: {_verify_password(password, stored)}")
     if not _verify_password(password, stored):
         _record_failed_attempt(key)
         return None
