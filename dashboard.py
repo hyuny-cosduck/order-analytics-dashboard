@@ -536,49 +536,31 @@ def show_brand_dashboard():
                 tab.classList.add('active');
             }});
         }});
-        // Logout — find and click hidden Streamlit button
+        // Logout — navigate with query param
         const logoutLink = document.getElementById('logout-link');
         if (logoutLink) {{
             logoutLink.addEventListener('click', () => {{
-                const buttons = document.querySelectorAll('button');
-                for (const btn of buttons) {{
-                    if (btn.textContent.trim() === 'Logout') {{ btn.click(); return; }}
-                }}
+                window.location.search = '?action=logout';
             }});
         }}
-        // Refresh — find and click hidden Streamlit button
+        // Refresh — navigate with query param
         const refreshLink = document.getElementById('refresh-link');
         if (refreshLink) {{
             refreshLink.addEventListener('click', () => {{
-                const buttons = document.querySelectorAll('button');
-                for (const btn of buttons) {{
-                    if (btn.textContent.trim() === 'Refresh') {{ btn.click(); return; }}
-                }}
+                window.location.search = '?action=refresh';
             }});
         }}
-        // Hide the Streamlit Logout + Refresh buttons (they sit above the tabs)
-        const allButtons = document.querySelectorAll('[data-testid="stButton"]');
-        allButtons.forEach(btnWrap => {{
-            const btn = btnWrap.querySelector('button');
-            if (btn && (btn.textContent.trim() === 'Logout' || btn.textContent.trim() === 'Refresh')) {{
-                // Walk up to the block container and hide it
-                let el = btnWrap;
-                while (el && !el.getAttribute('data-testid')?.startsWith('stVerticalBlock')) {{
-                    el = el.parentElement;
-                }}
-                if (el) el.style.display = 'none';
-                else btnWrap.style.display = 'none';
-            }}
-        }});
     }})();
     </script>
     """, unsafe_allow_html=True)
 
-    # Hidden Streamlit buttons (triggered by JS from fixed header)
-    # Use unique invisible text so we can target them with CSS
-    if st.button("Logout", key="hidden_logout"):
+    # Handle header actions via query params (set by JS)
+    _action = st.query_params.get("action", "")
+    if _action == "logout":
+        st.query_params.clear()
         logout()
-    if st.button("Refresh", key="hidden_refresh"):
+    elif _action == "refresh":
+        st.query_params.clear()
         st.cache_data.clear()
         for key in list(st.session_state.keys()):
             if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
