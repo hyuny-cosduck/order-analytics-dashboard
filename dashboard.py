@@ -1116,15 +1116,12 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         if st.button("7일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=6), max_date)
     with col_q2:
-        st.caption("")
         if st.button("14일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=13), max_date)
     with col_q3:
-        st.caption("")
         if st.button("30일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=29), max_date)
     with col_q4:
-        st.caption("")
         if st.button("전체", use_container_width=True):
             _queue_range(min_date, max_date)
 
