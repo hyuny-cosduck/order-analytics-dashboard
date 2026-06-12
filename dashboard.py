@@ -1066,7 +1066,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with h_right:
         st.subheader("빠른 선택")
 
-    col_month, col_range, col_q1, col_q2, col_q3, col_q4 = st.columns([2, 3, 0.7, 0.7, 0.7, 0.7])
+    col_month, col_range, col_q1, col_q2, col_q3, col_q4 = st.columns([1.5, 2.5, 0.6, 0.6, 0.6, 0.6])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
