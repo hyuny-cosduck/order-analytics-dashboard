@@ -94,10 +94,11 @@ def _inject_global_styles():
     header[data-testid="stHeader"] { display: none !important; }
     .stMainBlockContainer { padding-top: 2rem !important; }
 
-    /* Typography */
-    h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.4rem !important; }
-    h2 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 1.1rem !important; }
-    h3 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 0.95rem !important; }
+    /* Typography — compact like Agency Bot */
+    h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.2rem !important; }
+    h2 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 0.95rem !important; }
+    h3 { font-family: 'Inter', sans-serif !important; font-weight: 600 !important; color: #1e1e2e !important; font-size: 0.85rem !important; }
+    p, li { font-size: 0.875rem !important; }
 
     /* Inputs */
     .stTextInput > label, .stSelectbox > label, .stDateInput label, .stFileUploader > label {
@@ -119,10 +120,10 @@ def _inject_global_styles():
     .stDateInput [data-baseweb="input"] { background: white !important; border: 1px solid #e2e2ea !important; border-radius: 8px !important; }
     .stDateInput [data-baseweb="input"] div { color: #1e1e2e !important; font-weight: 500 !important; }
 
-    /* Buttons */
+    /* Buttons — compact */
     .stButton > button, .stFormSubmitButton > button {
-        border-radius: 8px !important; font-weight: 500 !important; font-size: 0.85rem !important;
-        font-family: 'Inter', sans-serif !important;
+        border-radius: 8px !important; font-weight: 500 !important; font-size: 0.8rem !important;
+        font-family: 'Inter', sans-serif !important; padding: 0.4rem 0.9rem !important;
     }
     .stButton > button[data-testid="stBaseButton-primary"],
     .stFormSubmitButton > button {
@@ -154,24 +155,26 @@ def _inject_global_styles():
         color: #6366f1 !important; border-bottom: 2px solid #6366f1 !important;
     }
 
-    /* Cards — metric containers, expanders, info boxes */
+    /* Metric cards — compact */
     [data-testid="stMetric"] {
-        background: white; border-radius: 12px; padding: 1rem 1.25rem;
+        background: white; border-radius: 10px; padding: 0.75rem 1rem;
         border: 1px solid #e2e2ea;
     }
-    [data-testid="stMetric"] label { color: #64648c !important; font-size: 0.8rem !important; font-weight: 500 !important; }
-    [data-testid="stMetric"] [data-testid="stMetricValue"] { color: #1e1e2e !important; font-weight: 700 !important; }
+    [data-testid="stMetric"] label { color: #64648c !important; font-size: 0.7rem !important; font-weight: 500 !important; }
+    [data-testid="stMetric"] [data-testid="stMetricValue"] { color: #1e1e2e !important; font-weight: 700 !important; font-size: 1.3rem !important; }
+    [data-testid="stMetric"] [data-testid="stMetricDelta"] { font-size: 0.75rem !important; }
 
-    /* Expanders */
+    /* Expanders — compact */
     .streamlit-expanderHeader {
-        font-weight: 500 !important; font-size: 0.9rem !important;
+        font-weight: 500 !important; font-size: 0.8rem !important;
         font-family: 'Inter', sans-serif !important;
         background: white !important; border-radius: 8px !important;
+        padding: 0.5rem 0.75rem !important;
     }
     details { border: 1px solid #e2e2ea !important; border-radius: 8px !important; }
 
-    /* Alerts */
-    .stAlert { border-radius: 10px !important; font-family: 'Inter', sans-serif !important; }
+    /* Alerts — compact */
+    .stAlert { border-radius: 8px !important; font-family: 'Inter', sans-serif !important; font-size: 0.8rem !important; padding: 0.6rem 1rem !important; }
 
     /* DataFrames */
     [data-testid="stDataFrame"] { border-radius: 8px !important; overflow: hidden; }
@@ -484,8 +487,9 @@ def show_brand_dashboard():
     .brand-header-tabs .htab.active {{ color: #6366f1; border-bottom-color: #6366f1; }}
     .stMainBlockContainer {{ padding-top: 7rem !important; }}
 
-    /* Hide Streamlit's native tabs since we use HTML tabs */
+    /* Hide Streamlit's native tabs + hidden logout */
     .stTabs [data-baseweb="tab-list"] {{ display: none !important; }}
+    #hidden-logout-wrap {{ position: absolute; left: -9999px; }}
     </style>
     <div class="brand-header" id="brand-header">
         <div class="brand-header-title">
@@ -533,11 +537,11 @@ def show_brand_dashboard():
     </script>
     """, unsafe_allow_html=True)
 
-    # Hidden Streamlit logout button (clicked by JS)
-    st.markdown("<div style='display:none'>", unsafe_allow_html=True)
+    # Hidden logout button (off-screen, clicked by JS from fixed header)
+    st.markdown('<div id="hidden-logout-wrap">', unsafe_allow_html=True)
     if st.button("Logout", key="hidden_logout"):
         logout()
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Hidden Streamlit tabs (visually hidden, controlled by JS)
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
@@ -975,10 +979,10 @@ def show_upload_section(sheet_id: str, brand_name: str):
 
 
 def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
-    # Refresh button
-    col_refresh, col_info = st.columns([1, 4])
+    # Refresh button — compact inline
+    col_refresh, col_spacer = st.columns([1, 6])
     with col_refresh:
-        if st.button("데이터 새로고침"):
+        if st.button("↻ 새로고침", type="secondary"):
             st.cache_data.clear()
             for key in list(st.session_state.keys()):
                 if key.startswith('main_range') or key.startswith('bundle_range') or key.startswith('_confirmed'):
@@ -1016,9 +1020,9 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         if len(samples_df) > 0:
             samples_df['Created Date'] = parse_created_time(samples_df['Created Time']).dt.date
 
-    with col_info:
-        sample_note = f" | 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
-        st.caption(f"전체 데이터: {len(df):,}행{sample_note}")
+    with col_spacer:
+        sample_note = f" · 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
+        st.caption(f"전체 {len(df):,}행{sample_note}")
 
     # Check for valid dates
     if 'Created Date' not in df.columns:
