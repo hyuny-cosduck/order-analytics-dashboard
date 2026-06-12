@@ -408,6 +408,9 @@ def show_brand_dashboard():
     _inject_global_styles()
     brand_name = st.session_state.brand_name
     brand_data = st.session_state.brand_data
+    if not brand_data:
+        logout()
+        return
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
