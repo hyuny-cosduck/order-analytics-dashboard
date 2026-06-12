@@ -1108,19 +1108,19 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.rerun()
 
     with col_q1:
-        st.markdown("<label style='font-weight:500; font-size:0.8rem; color:#64648c;'>빠른 선택</label>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 1.55rem; font-weight:500; font-size:0.8rem; color:#64648c; margin-bottom:0.4rem;'>빠른 선택</div>", unsafe_allow_html=True)
         if st.button("7일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=6), max_date)
     with col_q2:
-        st.markdown("<label style='font-size:0.8rem; color:transparent;'>.</label>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 1.55rem; margin-bottom:0.4rem;'></div>", unsafe_allow_html=True)
         if st.button("14일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=13), max_date)
     with col_q3:
-        st.markdown("<label style='font-size:0.8rem; color:transparent;'>.</label>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 1.55rem; margin-bottom:0.4rem;'></div>", unsafe_allow_html=True)
         if st.button("30일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=29), max_date)
     with col_q4:
-        st.markdown("<label style='font-size:0.8rem; color:transparent;'>.</label>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 1.55rem; margin-bottom:0.4rem;'></div>", unsafe_allow_html=True)
         if st.button("전체", use_container_width=True):
             _queue_range(min_date, max_date)
 
