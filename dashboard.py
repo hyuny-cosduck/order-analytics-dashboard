@@ -1109,7 +1109,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         st.rerun()
 
     with col_qlabel:
-        st.caption("빠른 선택")
+        st.markdown("<label style='font-weight:500; font-size:0.8rem; color:#64648c;'>빠른 선택</label>", unsafe_allow_html=True)
     with col_q1:
         st.caption("")
         if st.button("7일", use_container_width=True):
