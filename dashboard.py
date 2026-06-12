@@ -484,7 +484,7 @@ def show_brand_dashboard():
 def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
     """번들 SKU별 구매/취소 분석"""
     st.subheader("번들 SKU 분석")
-    st.caption("BDL_BEPLAIN 번들 상품의 구매/취소 현황을 분석합니다.")
+    st.caption("번들 상품을 선택하여 구매/취소 현황을 분석합니다.")
 
     with st.spinner("데이터를 불러오는 중..."):
         df, error = load_sheet_data(sheet_id)
@@ -497,15 +497,53 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
         st.warning("데이터가 없습니다. Upload 탭에서 데이터를 업로드해주세요.")
         return
 
-    # Filter bundle SKUs
     if 'Seller SKU' not in df.columns:
         st.error("'Seller SKU' 컬럼이 없습니다.")
         return
 
-    bundle_df = df[df['Seller SKU'].str.contains('BDL_BEPLAIN', na=False)].copy()
+    # Get all unique SKUs with their product names and order counts
+    sku_summary = df.groupby('Seller SKU').agg(
+        product_name=('Product Name', 'first'),
+        order_count=('Order ID', 'count'),
+    ).reset_index().sort_values('order_count', ascending=False)
+
+    # Auto-suggest: SKUs containing "BDL", "번들", "Bundle", "SET", "세트" or with quantity > 1 patterns
+    bundle_keywords = ['BDL', '번들', 'BUNDLE', 'SET', '세트', 'COMBO', '콤보']
+    suggested_skus = sku_summary[
+        sku_summary['Seller SKU'].str.upper().apply(
+            lambda x: any(kw.upper() in x for kw in bundle_keywords)
+        ) |
+        sku_summary['product_name'].fillna('').str.upper().apply(
+            lambda x: any(kw.upper() in x for kw in bundle_keywords)
+        )
+    ]['Seller SKU'].tolist()
+
+    # Session state key for selected bundles per sheet
+    state_key = f"bundle_skus_{sheet_id}"
+    if state_key not in st.session_state:
+        st.session_state[state_key] = suggested_skus
+
+    # SKU selector
+    with st.expander("번들 상품 선택", expanded=len(st.session_state[state_key]) == 0):
+        st.caption("번들로 분석할 SKU를 선택하세요. 자동으로 추천된 항목이 선택되어 있습니다.")
+
+        selected_skus = st.multiselect(
+            "번들 SKU 선택",
+            options=sku_summary['Seller SKU'].tolist(),
+            default=st.session_state[state_key],
+            format_func=lambda x: f"{x} — {sku_summary[sku_summary['Seller SKU']==x]['product_name'].values[0][:40] if len(sku_summary[sku_summary['Seller SKU']==x]) > 0 else ''} ({sku_summary[sku_summary['Seller SKU']==x]['order_count'].values[0]:,}건)",
+            key=f"bundle_multiselect_{sheet_id}",
+        )
+        st.session_state[state_key] = selected_skus
+
+    if not selected_skus:
+        st.info("번들 상품을 선택해주세요.")
+        return
+
+    bundle_df = df[df['Seller SKU'].isin(selected_skus)].copy()
 
     if len(bundle_df) == 0:
-        st.info("번들 상품 데이터가 없습니다. (BDL_BEPLAIN으로 시작하는 SKU)")
+        st.info("선택된 번들 상품의 데이터가 없습니다.")
         return
 
     # Data preprocessing
