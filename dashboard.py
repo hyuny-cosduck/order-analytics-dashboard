@@ -1169,17 +1169,17 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     d_amount = _pct_change(total_amount, prev_total_amount) if _has_prev_period else None
     d_cancel = _pct_change(cancel_count, prev_cancel_count) if _has_prev_period else None
     d_cancel_amt = _pct_change(cancel_amount, prev_cancel_amount) if _has_prev_period else None
-    d_samples = d_samples if _has_prev_period else None
 
     # Sample counts for current & previous period
     sample_count = samples_df['Order ID'].nunique() if len(samples_df) > 0 else 0
     sample_qty = int(samples_df['Quantity'].sum()) if len(samples_df) > 0 and 'Quantity' in samples_df.columns else 0
-    if len(samples_all) > 0 and 'Created Date' in samples_all.columns:
+    if _has_prev_period and len(samples_all) > 0 and 'Created Date' in samples_all.columns:
         prev_samples = samples_all[(samples_all['Created Date'] >= prev_start) & (samples_all['Created Date'] <= prev_end)]
         prev_sample_count = prev_samples['Order ID'].nunique() if len(prev_samples) > 0 else 0
+        d_samples = _pct_change(sample_count, prev_sample_count)
     else:
         prev_sample_count = 0
-    d_samples = _pct_change(sample_count, prev_sample_count)
+        d_samples = None
 
     prev_cancel_rate = prev_cancel_count / prev_total_orders * 100 if prev_total_orders > 0 else 0
 
