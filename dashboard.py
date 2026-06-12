@@ -94,10 +94,12 @@ def show_brand_login_page():
     with col2:
         st.subheader("Brand Login")
 
-        brand_name = st.text_input("Brand Name")
-        password = st.text_input("Password", type="password")
+        with st.form("brand_login_form"):
+            brand_name = st.text_input("Brand Name")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Login", type="primary", use_container_width=True)
 
-        if st.button("Login", type="primary", use_container_width=True):
+        if submitted:
             if brand_name and password:
                 if brands_manager.is_brand_rate_limited(brand_name):
                     st.error("Too many failed attempts. Please try again later.")
@@ -123,9 +125,11 @@ def show_admin_login_page():
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        password = st.text_input("Password", type="password")
+        with st.form("admin_login_form"):
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Login", type="primary", use_container_width=True)
 
-        if st.button("Login", type="primary", use_container_width=True):
+        if submitted:
             if password:
                 if brands_manager.is_admin_rate_limited():
                     st.error("Too many failed attempts. Please try again later.")
