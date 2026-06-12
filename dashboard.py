@@ -1222,23 +1222,64 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     with col1:
         _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else None
         st.metric(label="총 주문 수", value=f"{total_orders:,}건", delta=_d)
-        st.toggle("📈", value=True, key="kpi_주문수")
     with col2:
         _d = f"{d_amount:+.1f}% (이전: {fmt_money(prev_total_amount, currency)})" if d_amount is not None else None
         st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency), delta=_d)
-        st.toggle("📈", value=False, key="kpi_매출")
     with col3:
         _d = f"{d_cancel:+.1f}% (이전: {prev_cancel_count:,}건)" if d_cancel is not None else None
         st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)", delta=_d, delta_color="inverse")
-        st.toggle("📈", value=True, key="kpi_취소수")
     with col4:
         _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
         st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
-        st.toggle("📈", value=False, key="kpi_취소금액")
     with col5:
         _d = f"{d_samples:+.1f}% (이전: {prev_sample_count:,}건)" if d_samples is not None else None
         st.metric(label="샘플 발송", value=f"{sample_count:,}건 / {sample_qty:,}개", delta=_d)
-        st.toggle("📈", value=True, key="kpi_샘플발송")
+
+    # Pill buttons for chart metric selection
+    pill_metrics = {"주문수": "kpi_주문수", "매출": "kpi_매출", "취소수": "kpi_취소수", "취소금액": "kpi_취소금액", "샘플발송": "kpi_샘플발송"}
+    # Initialize defaults
+    for k, sk in pill_metrics.items():
+        if sk not in st.session_state:
+            st.session_state[sk] = k in ("주문수", "취소수", "샘플발송")
+
+    pill_cols = st.columns(len(pill_metrics))
+    for i, (label, sk) in enumerate(pill_metrics.items()):
+        with pill_cols[i]:
+            active = st.session_state[sk]
+            if st.button(label, key=f"pill_{sk}", use_container_width=True):
+                st.session_state[sk] = not st.session_state[sk]
+                st.rerun()
+
+    # Style active pills with indigo, inactive with gray
+    pill_css = ""
+    for label, sk in pill_metrics.items():
+        active = st.session_state.get(sk, False)
+        if active:
+            pill_css += f'button[data-testid="stBaseButton-secondary"]:has(p:contains("{label}")) {{ background: #6366f1 !important; color: white !important; border: none !important; }}\n'
+
+    # Use JS-based styling since CSS :has(:contains()) isn't reliable
+    active_labels = [l for l, sk in pill_metrics.items() if st.session_state.get(sk)]
+    st.markdown(f"""
+    <script>
+    (function() {{
+        const activeLabels = {active_labels};
+        setTimeout(() => {{
+            document.querySelectorAll('button[kind="secondary"]').forEach(btn => {{
+                const text = btn.textContent.trim();
+                if (activeLabels.includes(text)) {{
+                    btn.style.background = '#6366f1';
+                    btn.style.color = 'white';
+                    btn.style.border = 'none';
+                }} else if (['주문수','매출','취소수','취소금액','샘플발송'].includes(text)) {{
+                    btn.style.background = '#e2e2ea';
+                    btn.style.color = '#64648c';
+                    btn.style.border = 'none';
+                }}
+            }});
+        }}, 100);
+    }})();
+    </script>
+    """, unsafe_allow_html=True)
 
     # ===== KPI Daily Trend Chart =====
     kpi_daily = order_info.groupby('Created Date').agg(
@@ -1262,13 +1303,8 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     else:
         kpi_daily['샘플발송'] = 0
 
-    # Build metric list from card checkboxes
-    kpi_metrics = []
-    if st.session_state.get("kpi_주문수"): kpi_metrics.append("주문수")
-    if st.session_state.get("kpi_매출"): kpi_metrics.append("매출")
-    if st.session_state.get("kpi_취소수"): kpi_metrics.append("취소수")
-    if st.session_state.get("kpi_취소금액"): kpi_metrics.append("취소금액")
-    if st.session_state.get("kpi_샘플발송"): kpi_metrics.append("샘플발송")
+    # Build metric list from pill buttons
+    kpi_metrics = [l for l, sk in pill_metrics.items() if st.session_state.get(sk)]
 
     if kpi_metrics:
         colors = {"주문수": "#6366f1", "매출": "#22c55e", "취소수": "#ef4444", "취소금액": "#f97316", "샘플발송": "#a855f7"}
