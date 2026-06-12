@@ -412,13 +412,9 @@ def show_brand_dashboard():
     currency = brand_data.get('currency', 'Rp')
 
     # Header
-    col1, col2 = st.columns([5, 1])
-    with col1:
-        st.title(f"{brand_name} Order Analytics")
-    with col2:
-        st.markdown("<div style='height: 0.5rem'></div>", unsafe_allow_html=True)
-        if st.button("Logout", type="secondary"):
-            logout()
+    st.title(f"{brand_name} Order Analytics")
+    if st.button("Logout", type="secondary"):
+        logout()
 
     st.markdown("---")
 
@@ -1265,11 +1261,13 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
 # ===== MAIN APP ROUTING =====
 if st.session_state.authenticated:
-    # Authenticated — skip login entirely
     if st.session_state.is_admin:
         show_admin_panel()
-    else:
+    elif st.session_state.brand_data:
         show_brand_dashboard()
+    else:
+        # Stale session — force re-login
+        logout()
 else:
     if is_admin_route():
         show_admin_login_page()
