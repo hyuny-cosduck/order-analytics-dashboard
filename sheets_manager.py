@@ -318,8 +318,11 @@ def _get_or_create_config_sheet() -> gspread.Spreadsheet:
             sp = _retry_on_quota(lambda: client.open_by_key(sheet_id))
             _cached_config_sheet_id = sheet_id
             return sp
-        except gspread.exceptions.SpreadsheetNotFound:
-            _cached_config_sheet_id = None  # ID is stale
+        except (gspread.exceptions.SpreadsheetNotFound, gspread.exceptions.APIError) as e:
+            _cached_config_sheet_id = None  # ID is stale or inaccessible
+            # Don't try to create if the issue is quota/permissions
+            if isinstance(e, gspread.exceptions.APIError):
+                raise
 
     # Config sheet doesn't exist — create one
     spreadsheet = _retry_on_quota(
