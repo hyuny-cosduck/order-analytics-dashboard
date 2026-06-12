@@ -92,9 +92,6 @@ def _inject_global_styles():
 
     .stApp { background: #f4f4f8 !important; }
     header[data-testid="stHeader"] { background: #f4f4f8 !important; }
-    body, p, span, div, input, button, label, h1, h2, h3, h4, h5, h6, td, th, li, a {
-        font-family: 'Inter', sans-serif !important;
-    }
 
     /* Inputs */
     .stTextInput > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
