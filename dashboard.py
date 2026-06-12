@@ -1264,12 +1264,15 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
 
 
 # ===== MAIN APP ROUTING =====
-if not st.session_state.authenticated:
+if st.session_state.authenticated:
+    # Authenticated — skip login entirely
+    if st.session_state.is_admin:
+        show_admin_panel()
+    else:
+        show_brand_dashboard()
+else:
     if is_admin_route():
         show_admin_login_page()
     else:
         show_brand_login_page()
-elif st.session_state.is_admin:
-    show_admin_panel()
-else:
     show_brand_dashboard()
