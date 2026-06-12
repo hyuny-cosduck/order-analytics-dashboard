@@ -1221,6 +1221,53 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
         st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
 
+    # ===== KPI Daily Trend Chart =====
+    kpi_daily = order_info.groupby('Created Date').agg(
+        주문수=('Order ID', 'count'),
+        매출=('Order Amount', 'sum'),
+    ).reset_index()
+
+    kpi_canceled_daily = order_info[order_info['Order Status'].isin(('Canceled', 'Cancelled'))].groupby('Created Date').agg(
+        취소수=('Order ID', 'count'),
+        취소금액=('Order Amount', 'sum'),
+    ).reset_index()
+
+    kpi_daily = kpi_daily.merge(kpi_canceled_daily, on='Created Date', how='left').fillna(0)
+    kpi_daily['취소율(%)'] = (kpi_daily['취소수'] / kpi_daily['주문수'] * 100).round(1)
+
+    kpi_metrics = st.multiselect(
+        "지표 선택",
+        options=["주문수", "매출", "취소수", "취소율(%)"],
+        default=["주문수", "취소율(%)"],
+        key="kpi_chart_metrics",
+    )
+
+    if kpi_metrics:
+        fig_kpi = make_subplots(specs=[[{"secondary_y": True}]])
+        colors = {"주문수": "#6366f1", "매출": "#22c55e", "취소수": "#ef4444", "취소율(%)": "#f59e0b"}
+        # Put % on secondary y-axis
+        for m in kpi_metrics:
+            secondary = m == "취소율(%)"
+            fig_kpi.add_trace(
+                go.Scatter(
+                    name=m, x=kpi_daily['Created Date'], y=kpi_daily[m],
+                    mode='lines+markers', line=dict(color=colors.get(m, '#6366f1'), width=2),
+                    marker=dict(size=4),
+                    hovertemplate=f'{m}: %{{y:,.1f}}{"%" if secondary else ""}<extra></extra>',
+                ),
+                secondary_y=secondary,
+            )
+        fig_kpi.update_layout(
+            height=280, margin=dict(t=10, b=30, l=10, r=10),
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
+            hovermode='x unified',
+        )
+        fig_kpi.update_yaxes(title_text="", secondary_y=False)
+        fig_kpi.update_yaxes(title_text="", secondary_y=True)
+        st.plotly_chart(fig_kpi, use_container_width=True)
+
+    st.markdown("---")
+
     # ===== Sample/Creator Orders =====
     if len(samples_df) > 0:
         sample_orders = samples_df['Order ID'].nunique()
