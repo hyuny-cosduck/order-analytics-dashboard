@@ -1209,25 +1209,17 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     prev_cancel_rate = prev_cancel_count / prev_total_orders * 100 if prev_total_orders > 0 else 0
 
     with col1:
-        st.metric(label="총 주문 수", value=f"{total_orders:,}건",
-                  delta=f"{d_orders:+.1f}%" if d_orders is not None else None)
-        if prev_total_orders > 0:
-            st.caption(f"이전: {prev_total_orders:,}건")
+        _d = f"{d_orders:+.1f}% (이전: {prev_total_orders:,}건)" if d_orders is not None else None
+        st.metric(label="총 주문 수", value=f"{total_orders:,}건", delta=_d)
     with col2:
-        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency),
-                  delta=f"{d_amount:+.1f}%" if d_amount is not None else None)
-        if prev_total_amount > 0:
-            st.caption(f"이전: {fmt_money(prev_total_amount, currency)}")
+        _d = f"{d_amount:+.1f}% (이전: {fmt_money(prev_total_amount, currency)})" if d_amount is not None else None
+        st.metric(label="총 주문 금액", value=fmt_money(total_amount, currency), delta=_d)
     with col3:
-        st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)",
-                  delta=f"{d_cancel:+.1f}%" if d_cancel is not None else None, delta_color="inverse")
-        if prev_cancel_count > 0:
-            st.caption(f"이전: {prev_cancel_count:,}건 ({prev_cancel_rate:.1f}%)")
+        _d = f"{d_cancel:+.1f}% (이전: {prev_cancel_count:,}건)" if d_cancel is not None else None
+        st.metric(label="취소 주문 수", value=f"{cancel_count:,}건 ({cancel_rate:.1f}%)", delta=_d, delta_color="inverse")
     with col4:
-        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency),
-                  delta=f"{d_cancel_amt:+.1f}%" if d_cancel_amt is not None else None, delta_color="inverse")
-        if prev_cancel_amount > 0:
-            st.caption(f"이전: {fmt_money(prev_cancel_amount, currency)}")
+        _d = f"{d_cancel_amt:+.1f}% (이전: {fmt_money(prev_cancel_amount, currency)})" if d_cancel_amt is not None else None
+        st.metric(label="취소 금액", value=fmt_money(cancel_amount, currency), delta=_d, delta_color="inverse")
 
     # ===== Sample/Creator Orders =====
     if len(samples_df) > 0:
