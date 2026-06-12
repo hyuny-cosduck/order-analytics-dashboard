@@ -446,76 +446,47 @@ def show_brand_dashboard():
     sheet_id = brand_data.get('sheet_id')
     currency = brand_data.get('currency', 'Rp')
 
-    # Sticky header — use JS to wrap title + tabs after render
-    st.markdown("""
+    # Fixed header bar (pure HTML/CSS — always visible at top)
+    st.markdown(f"""
     <style>
-    /* Kill overflow on all ancestors so sticky works */
-    section[data-testid="stMain"],
-    section[data-testid="stMain"] > div,
-    [data-testid="stMainBlockContainer"],
-    [data-testid="stAppViewContainer"] {
-        overflow: visible !important;
-    }
-    .stMainBlockContainer { padding-top: 0 !important; }
-
-    /* Sticky header styles (applied by JS) */
-    .st-sticky-header {
-        position: sticky !important;
-        top: 0;
-        z-index: 40;
-        background: #f4f4f8;
+    .brand-header {{
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 999;
+        background: white;
         border-bottom: 1px solid #e2e2ea;
-        padding-top: 1rem;
+        padding: 0.9rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         transition: box-shadow 0.2s ease;
-    }
-    .st-sticky-header.is-scrolled {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }
+    }}
+    .brand-header h1 {{
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 1.2rem;
+        color: #1e1e2e;
+        margin: 0;
+    }}
+    .stMainBlockContainer {{ padding-top: 3.5rem !important; }}
     </style>
+    <div class="brand-header" id="brand-header">
+        <h1>{brand_name} Order Analytics</h1>
+    </div>
     <script>
-    function initStickyHeader() {
-        // Find the main vertical block that holds all content
-        const blocks = document.querySelectorAll('[data-testid="stVerticalBlock"]');
-        if (blocks.length < 2) return setTimeout(initStickyHeader, 300);
-
-        // The outermost vertical block inside main
-        const mainBlock = blocks[0];
-        const children = mainBlock.children;
-        if (children.length < 3) return setTimeout(initStickyHeader, 300);
-
-        // Already wrapped?
-        if (document.querySelector('.st-sticky-header')) return;
-
-        // Create wrapper for first elements (title cols + tabs)
-        const wrapper = document.createElement('div');
-        wrapper.className = 'st-sticky-header';
-
-        // Move first 2 children (columns row + tabs) into wrapper
-        // children[0] = columns (title + logout), children[1] = tabs
-        const el0 = children[0];
-        const el1 = children[1];
-        mainBlock.insertBefore(wrapper, el0);
-        wrapper.appendChild(el0);
-        wrapper.appendChild(el1);
-
-        // Scroll shadow
-        const onScroll = () => wrapper.classList.toggle('is-scrolled', window.scrollY > 4);
-        window.addEventListener('scroll', onScroll, { passive: true });
-        onScroll();
-    }
-    // Retry until Streamlit finishes rendering
-    setTimeout(initStickyHeader, 500);
+    const bh = document.getElementById('brand-header');
+    if (bh) {{
+        window.addEventListener('scroll', () => {{
+            bh.style.boxShadow = window.scrollY > 4
+                ? '0 4px 12px rgba(0,0,0,0.06)' : 'none';
+        }}, {{ passive: true }});
+    }}
     </script>
     """, unsafe_allow_html=True)
 
-    # Header row
-    col1, col2 = st.columns([6, 1])
-    with col1:
-        st.markdown(f"""
-        <h1 style="font-family:'Inter',sans-serif; font-weight:700; font-size:1.4rem;
-                   color:#1e1e2e; margin:0; padding:0.25rem 0;">{brand_name} Order Analytics</h1>
-        """, unsafe_allow_html=True)
-    with col2:
+    # Logout button (Streamlit widget — sits below fixed header)
+    _, logout_col = st.columns([8, 1])
+    with logout_col:
         if st.button("Logout", type="secondary", use_container_width=True):
             logout()
 
