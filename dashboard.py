@@ -944,7 +944,11 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
                        mode='lines+markers', line=dict(color='#FF9800', width=2),
                        hovertemplate='%{x}<br>취소율 %{y:.1f}%<extra></extra>'), secondary_y=True
         )
-        fig_daily.update_layout(barmode='overlay', height=400, title='날짜별 번들 주문/취소 추이')
+        fig_daily.update_layout(
+            barmode='overlay', height=400, title='날짜별 번들 주문/취소 추이',
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
+            margin=dict(t=40, b=30, l=50, r=50),
+        )
         fig_daily.update_yaxes(title_text="주문 수", secondary_y=False)
         fig_daily.update_yaxes(title_text="취소율 (%)", secondary_y=True)
         st.plotly_chart(fig_daily, use_container_width=True)
@@ -1454,7 +1458,11 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                    mode='lines+markers', line=dict(color='#FF9800', width=2),
                    hovertemplate='%{x}<br>취소율 %{y:.1f}%<extra></extra>'), secondary_y=True
     )
-    fig_daily.update_layout(barmode='overlay', height=400)
+    fig_daily.update_layout(
+        barmode='overlay', height=400,
+        legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
+        margin=dict(t=40, b=30, l=50, r=50),
+    )
     fig_daily.update_yaxes(title_text="주문 수", secondary_y=False)
     fig_daily.update_yaxes(title_text="취소율 (%)", secondary_y=True)
     st.plotly_chart(fig_daily, use_container_width=True)
@@ -1517,7 +1525,11 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                 color_discrete_map={'정상 주문(quantity)': '#4CAF50', '취소 주문(quantity)': '#f44336'},
                 hover_data={'Product Name Short': False, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in top_sku.columns else {'Product Name Short': False, '번호': False},
             )
-            fig_sku.update_layout(xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': top_sku['번호'].tolist()})
+            fig_sku.update_layout(
+                xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': top_sku['번호'].tolist()},
+                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
+                margin=dict(t=50, b=30, l=10, r=10),
+            )
             st.plotly_chart(fig_sku, use_container_width=True)
 
         with col2:
@@ -1529,7 +1541,10 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                 color='취소율(%)', color_continuous_scale='Reds',
                 hover_data={'Product Name Short': False, 'Product Name': True, 'Seller SKU': True, '번호': False} if 'Product Name' in high_cancel_sku.columns else {'Product Name Short': False, '번호': False},
             )
-            fig_cancel_sku.update_layout(xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': high_cancel_sku['번호'].tolist()})
+            fig_cancel_sku.update_layout(
+                xaxis_title='제품 번호', xaxis={'categoryorder': 'array', 'categoryarray': high_cancel_sku['번호'].tolist()},
+                margin=dict(t=50, b=30, l=10, r=10),
+            )
             st.plotly_chart(fig_cancel_sku, use_container_width=True)
 
         # Mapping tables so users can see which # corresponds to which product
