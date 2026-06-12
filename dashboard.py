@@ -910,12 +910,6 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         # into the widget key BEFORE the widget is instantiated.
         if '_pending_main_range' in st.session_state:
             st.session_state[range_key] = st.session_state.pop('_pending_main_range')
-        # Force update to cover full data range (e.g. after uploading new data)
-        elif range_key in st.session_state:
-            stored = st.session_state[range_key]
-            if isinstance(stored, (list, tuple)) and len(stored) == 2:
-                if stored[0] != min_date or stored[1] != max_date:
-                    st.session_state[range_key] = (min_date, max_date)
 
     with col_range:
         date_range = st.date_input(
