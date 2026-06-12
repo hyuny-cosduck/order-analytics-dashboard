@@ -306,40 +306,17 @@ CONFIG_SHEET_NAME = "_DataCenterConfig"
 
 
 def _get_or_create_config_sheet() -> gspread.Spreadsheet:
-    """Get the config sheet using the ID from config.
-    Falls back to creating a new one only if the configured sheet is gone."""
+    """Get the config sheet using the ID from config."""
     global _cached_config_sheet_id
     client = get_client()
 
-    # Use configured or cached ID — no Drive search needed
     sheet_id = _cached_config_sheet_id or config.CONFIG_SHEET_ID
-    if sheet_id:
-        try:
-            sp = _retry_on_quota(lambda: client.open_by_key(sheet_id))
-            _cached_config_sheet_id = sheet_id
-            return sp
-        except (gspread.exceptions.SpreadsheetNotFound, gspread.exceptions.APIError) as e:
-            _cached_config_sheet_id = None  # ID is stale or inaccessible
-            # Don't try to create if the issue is quota/permissions
-            if isinstance(e, gspread.exceptions.APIError):
-                raise
+    if not sheet_id:
+        raise ValueError("CONFIG_SHEET_ID is not set")
 
-    # Config sheet doesn't exist — create one
-    spreadsheet = _retry_on_quota(
-        lambda: client.create(CONFIG_SHEET_NAME, folder_id=config.DRIVE_FOLDER_ID)
-    )
-    _cached_config_sheet_id = spreadsheet.id
-
-    # Set up brands worksheet
-    worksheet = spreadsheet.sheet1
-    worksheet.update_title("Brands")
-    worksheet.update('A1', [["brand_name", "sheet_id", "sheet_url", "password"]])
-    worksheet.format('A1:D1', {
-        'textFormat': {'bold': True},
-        'backgroundColor': {'red': 0.9, 'green': 0.9, 'blue': 0.9}
-    })
-
-    return spreadsheet
+    sp = _retry_on_quota(lambda: client.open_by_key(sheet_id))
+    _cached_config_sheet_id = sheet_id
+    return sp
 
 
 def load_brands_from_sheet() -> Dict:
@@ -364,7 +341,10 @@ def load_brands_from_sheet() -> Dict:
         return brands
     except Exception as e:
         import streamlit as st
+        sa_info = config.get_service_account_info()
+        email = sa_info.get('client_email', 'unknown') if sa_info else 'no credentials'
         st.error(f"브랜드 데이터 로딩 실패: {e}")
+        st.caption(f"Service account: {email} | Config sheet: {config.CONFIG_SHEET_ID}")
         return {}
 
 
