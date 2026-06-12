@@ -422,7 +422,7 @@ def show_brand_dashboard():
     st.markdown("---")
 
     # Tabs: Dashboard, Bundle Analysis, and Upload
-    tab1, tab2, tab3 = st.tabs(["Dashboard", "📦 번들 분석", "Upload Data"])
+    tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
 
     with tab1:
         show_dashboard_content(sheet_id, currency)
