@@ -1327,14 +1327,27 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     # ===== Order Status Distribution =====
     col1, col2 = st.columns(2)
 
+    # Current period status
+    status_dist = order_info.groupby('Order Status').agg({
+        'Order ID': 'count',
+        'Order Amount': 'sum'
+    }).reset_index()
+    status_dist.columns = ['Order Status', 'Count', 'Amount']
+
+    # Previous period status
+    if len(df_prev) > 0:
+        df_prev_sorted = df_prev.sort_values('Created Time', ascending=False) if 'Created Time' in df_prev.columns else df_prev
+        prev_oi = df_prev_sorted.groupby('Order ID').agg({
+            'Order Amount': 'first', 'Order Status': 'first'
+        }).reset_index()
+        prev_status = prev_oi.groupby('Order Status').agg(
+            Count=('Order ID', 'count'), Amount=('Order Amount', 'sum')
+        ).reset_index()
+    else:
+        prev_status = pd.DataFrame(columns=['Order Status', 'Count', 'Amount'])
+
     with col1:
         st.subheader("Order Status 분포")
-        status_dist = order_info.groupby('Order Status').agg({
-            'Order ID': 'count',
-            'Order Amount': 'sum'
-        }).reset_index()
-        status_dist.columns = ['Order Status', 'Count', 'Amount']
-
         fig_status = px.pie(
             status_dist, values='Count', names='Order Status', hole=0.4,
             color_discrete_sequence=px.colors.qualitative.Set2
@@ -1342,6 +1355,15 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         fig_status.update_traces(textposition='inside', textinfo='percent+label')
         fig_status.update_layout(height=300, legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=10, b=30, l=10, r=10))
         st.plotly_chart(fig_status, use_container_width=True)
+
+        # Previous period comparison
+        if len(prev_status) > 0:
+            prev_total = prev_status['Count'].sum()
+            prev_parts = []
+            for _, r in prev_status.iterrows():
+                pct = r['Count'] / prev_total * 100 if prev_total > 0 else 0
+                prev_parts.append(f"{r['Order Status']} {r['Count']:,.0f}건({pct:.1f}%)")
+            st.caption(f"이전: {' · '.join(prev_parts)}")
 
     with col2:
         st.subheader("💰 Status별 금액")
@@ -1351,6 +1373,13 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         )
         fig_amount.update_layout(showlegend=False, height=300, margin=dict(t=10, b=30, l=10, r=10))
         st.plotly_chart(fig_amount, use_container_width=True)
+
+        # Previous period comparison
+        if len(prev_status) > 0:
+            prev_parts = []
+            for _, r in prev_status.iterrows():
+                prev_parts.append(f"{r['Order Status']} {fmt_money(r['Amount'], currency)}")
+            st.caption(f"이전: {' · '.join(prev_parts)}")
 
     st.markdown("---")
 
