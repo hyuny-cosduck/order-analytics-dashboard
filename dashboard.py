@@ -1293,6 +1293,10 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         if use_dual:
             fig_kpi.update_yaxes(title_text="건수", secondary_y=False)
             fig_kpi.update_yaxes(title_text="금액", secondary_y=True)
+        elif has_amount:
+            fig_kpi.update_yaxes(title_text="금액", secondary_y=False)
+        else:
+            fig_kpi.update_yaxes(title_text="건수", secondary_y=False)
         st.plotly_chart(fig_kpi, use_container_width=True)
 
     st.markdown("---")
