@@ -1096,14 +1096,17 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             st.session_state[range_key] = st.session_state.pop('_pending_main_range')
 
     with col_range:
-        date_range = st.date_input(
-            "기간",
-            value=(default_start, default_end),
+        # Only pass value= if not already set via session state (avoids conflict)
+        date_kwargs = dict(
+            label="기간",
             min_value=min_date,
             max_value=max_date,
             key=range_key,
             label_visibility="collapsed",
         )
+        if range_key not in st.session_state:
+            date_kwargs['value'] = (default_start, default_end)
+        date_range = st.date_input(**date_kwargs)
 
     if isinstance(date_range, tuple) and len(date_range) == 2:
         start_date, end_date = date_range
