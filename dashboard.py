@@ -1064,10 +1064,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     if '_pending_month_sel' in st.session_state:
         st.session_state['main_month_sel'] = st.session_state.pop('_pending_month_sel')
 
-    _period_header_left, _period_header_right = st.columns([1, 2])
-    with _period_header_left:
-        st.subheader("📅 기간 선택")
-    _period_info_placeholder = _period_header_right.empty()
+    _period_info_placeholder = st.empty()
 
     # Labels row
     lbl1, lbl2, lbl_quick, _, _, _, _ = st.columns([2, 3, 1, 1, 1, 1, 1])
@@ -1156,7 +1153,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         samples_df = samples_df[(samples_df['Created Date'] >= start_date) & (samples_df['Created Date'] <= end_date)]
 
     sample_info = f" | 샘플 {len(samples_df):,}건" if len(samples_df) > 0 else ""
-    _period_info_placeholder.caption(f"선택된 기간: {start_date} ~ {end_date} ({len(df):,}행{sample_info})")
+    _period_info_placeholder.subheader(f"📅 기간 선택 — {start_date} ~ {end_date} ({len(df):,}행{sample_info})")
 
     # Order-level aggregation (current period)
     df_sorted = df.sort_values('Created Time', ascending=False) if 'Created Time' in df.columns else df
