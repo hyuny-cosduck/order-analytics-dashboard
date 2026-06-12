@@ -147,6 +147,14 @@ def _inject_global_styles():
 
     /* Dividers */
     hr { border-color: #e2e2ea !important; }
+
+    /* Reset login-specific styles on non-login pages */
+    .stMainBlockContainer { padding-top: 1rem !important; }
+    [data-testid="stForm"] {
+        border: 1px solid #e2e2ea !important; padding: 1rem !important;
+        background: transparent !important; border-radius: 8px !important;
+        box-shadow: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
