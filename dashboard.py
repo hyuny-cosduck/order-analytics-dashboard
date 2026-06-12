@@ -84,20 +84,93 @@ def is_admin_route():
         return False
 
 
+# ===== LOGIN PAGE STYLES =====
+def _inject_login_styles():
+    st.markdown("""
+    <style>
+    /* Center the login card */
+    .login-container {
+        max-width: 420px;
+        margin: 4rem auto 2rem auto;
+        padding: 2.5rem 2rem 2rem 2rem;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    }
+    .login-header {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    .login-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin-bottom: 0.25rem;
+    }
+    .login-subtitle {
+        text-align: center;
+        color: #6b7280;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }
+    /* Hide default Streamlit form border */
+    [data-testid="stForm"] {
+        border: none !important;
+        padding: 0 !important;
+    }
+    /* Style text inputs */
+    .login-container .stTextInput > div > div > input {
+        border-radius: 10px;
+        padding: 0.65rem 0.85rem;
+        border: 1.5px solid #e0e0e0;
+        font-size: 0.95rem;
+    }
+    .login-container .stTextInput > div > div > input:focus {
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+    }
+    /* Style submit button */
+    .login-container .stFormSubmitButton > button {
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-top: 0.5rem;
+    }
+    /* Divider line */
+    .login-divider {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin: 1.5rem 0 1rem 0;
+    }
+    .login-footer {
+        text-align: center;
+        font-size: 0.8rem;
+        color: #9ca3af;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 # ===== BRAND LOGIN PAGE =====
 def show_brand_login_page():
-    st.title("📊 Order Analytics Dashboard")
-    st.markdown("---")
+    _inject_login_styles()
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown("""
+    <div class="login-container">
+        <div class="login-header"><h1>Order Analytics</h1></div>
+        <p class="login-subtitle">Sign in to your brand dashboard</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1.2, 2, 1.2])
 
     with col2:
-        st.subheader("Brand Login")
-
         with st.form("brand_login_form"):
-            brand_name = st.text_input("Brand Name")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Login", type="primary", use_container_width=True)
+            brand_name = st.text_input("Brand Name", placeholder="Enter your brand name")
+            password = st.text_input("Password", type="password", placeholder="Enter your password")
+            st.markdown("<div style='height: 0.25rem'></div>", unsafe_allow_html=True)
+            submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
 
         if submitted:
             if brand_name and password:
@@ -116,18 +189,27 @@ def show_brand_login_page():
             else:
                 st.warning("Please enter brand name and password")
 
+        st.markdown("<p class='login-footer'>Cosduck Global Team</p>", unsafe_allow_html=True)
+
 
 # ===== ADMIN LOGIN PAGE =====
 def show_admin_login_page():
-    st.title("🔧 Admin Login")
-    st.markdown("---")
+    _inject_login_styles()
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    st.markdown("""
+    <div class="login-container">
+        <div class="login-header"><h1>Admin Panel</h1></div>
+        <p class="login-subtitle">Enter your admin password to continue</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1.2, 2, 1.2])
 
     with col2:
         with st.form("admin_login_form"):
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Login", type="primary", use_container_width=True)
+            password = st.text_input("Password", type="password", placeholder="Enter admin password")
+            st.markdown("<div style='height: 0.25rem'></div>", unsafe_allow_html=True)
+            submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
 
         if submitted:
             if password:
@@ -141,6 +223,8 @@ def show_admin_login_page():
                     st.error("Invalid password")
             else:
                 st.warning("Please enter password")
+
+        st.markdown("<p class='login-footer'>Cosduck Global Team</p>", unsafe_allow_html=True)
 
 
 # ===== ADMIN PANEL =====
