@@ -180,10 +180,8 @@ def _inject_global_styles():
     /* Plotly charts */
     [data-testid="stPlotlyChart"] {
         background: white; border-radius: 12px; padding: 0.75rem;
-        border: 1px solid #e2e2ea; overflow: hidden;
+        border: 1px solid #e2e2ea;
     }
-    [data-testid="stPlotlyChart"] > div { width: 100% !important; }
-    .js-plotly-plot, .plot-container { width: 100% !important; }
 
     /* Hide anchor links */
     a.stHeaderLink, h1 a, h2 a { display: none !important; }
@@ -818,6 +816,7 @@ def show_bundle_analysis(sheet_id: str, currency: str = "Rp"):
             hole=0.4
         )
         fig_type.update_traces(textposition='inside', textinfo='percent+label')
+        fig_type.update_layout(legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=40, b=40))
         st.plotly_chart(fig_type, use_container_width=True)
 
     with col2:
@@ -1140,6 +1139,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
             color_discrete_sequence=px.colors.qualitative.Set2
         )
         fig_status.update_traces(textposition='inside', textinfo='percent+label')
+        fig_status.update_layout(legend=dict(orientation='h', yanchor='bottom', y=-0.2, xanchor='center', x=0.5), margin=dict(t=20, b=40))
         st.plotly_chart(fig_status, use_container_width=True)
 
     with col2:
@@ -1290,7 +1290,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         canceled_orders_detail['출고여부'] = canceled_orders_detail['Tracking ID'].notna() & (canceled_orders_detail['Tracking ID'] != '')
         canceled_orders_detail['출고여부'] = canceled_orders_detail['출고여부'].map({True: '출고됨', False: '미출고'})
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns([2, 1, 2])
 
         shipped = canceled_orders_detail[canceled_orders_detail['출고여부'] == '출고됨']
         not_shipped = canceled_orders_detail[canceled_orders_detail['출고여부'] == '미출고']
@@ -1306,6 +1306,7 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
                 color_discrete_map={'출고됨': '#FF9800', '미출고': '#9E9E9E'}
             )
             fig_ship.update_traces(textposition='inside', textinfo='percent+value')
+            fig_ship.update_layout(legend=dict(orientation='h', yanchor='bottom', y=-0.15, xanchor='center', x=0.5), margin=dict(t=20, b=40))
             st.plotly_chart(fig_ship, use_container_width=True)
 
         with col2:
