@@ -91,7 +91,8 @@ def _inject_global_styles():
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
-    header[data-testid="stHeader"] { background: white !important; border-bottom: 1px solid #e2e2ea; }
+    header[data-testid="stHeader"] { display: none !important; }
+    .stMainBlockContainer { padding-top: 2rem !important; }
 
     /* Typography */
     h1 { font-family: 'Inter', sans-serif !important; font-weight: 700 !important; color: #1e1e2e !important; font-size: 1.4rem !important; }
@@ -205,6 +206,8 @@ def _inject_global_styles():
 # ===== BRAND LOGIN PAGE =====
 def show_brand_login_page():
     _inject_global_styles()
+    # Extra login-page padding
+    st.markdown("<style>.stMainBlockContainer { padding-top: 0 !important; }</style>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1.3, 1.4, 1.3])
 
@@ -254,6 +257,7 @@ def show_brand_login_page():
 # ===== ADMIN LOGIN PAGE =====
 def show_admin_login_page():
     _inject_global_styles()
+    st.markdown("<style>.stMainBlockContainer { padding-top: 0 !important; }</style>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1.3, 1.4, 1.3])
 
@@ -445,10 +449,11 @@ def show_brand_dashboard():
     # Header
     col1, col2 = st.columns([6, 1])
     with col1:
-        st.title(f"{brand_name}")
+        st.title(f"{brand_name} Order Analytics")
     with col2:
         if st.button("Logout", type="secondary", use_container_width=True):
             logout()
+    st.markdown("---")
 
     # Tabs: Dashboard, Bundle Analysis, and Upload
     tab1, tab2, tab3 = st.tabs(["📈 Dashboard", "📦 번들 분석", "📤 Upload Data"])
