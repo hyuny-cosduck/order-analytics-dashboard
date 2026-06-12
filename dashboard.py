@@ -496,9 +496,11 @@ def show_brand_dashboard():
     .brand-header-tabs .htab.active {{ color: #6366f1; border-bottom-color: #6366f1; }}
     .stMainBlockContainer {{ padding-top: 7rem !important; }}
 
-    /* Hide Streamlit's native tabs */
+    /* Hide Streamlit's native tabs + panel border */
     .stTabs [data-baseweb="tab-list"] {{ display: none !important; }}
-    /* Hide the hidden Streamlit buttons via JS after render */
+    .stTabs [data-baseweb="tab-border"] {{ display: none !important; }}
+    .stTabs [data-baseweb="tab-highlight"] {{ display: none !important; }}
+    .stTabs {{ border: none !important; }}
     </style>
     <div class="brand-header" id="brand-header">
         <div class="brand-header-title">
