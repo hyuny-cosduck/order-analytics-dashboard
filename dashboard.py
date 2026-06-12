@@ -84,60 +84,85 @@ def is_admin_route():
         return False
 
 
-# ===== LOGIN PAGE STYLES =====
-def _inject_login_styles():
+# ===== GLOBAL STYLES (applies to all pages) =====
+def _inject_global_styles():
     st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
     .stApp { background: #f4f4f8 !important; }
-    header[data-testid="stHeader"] { background: transparent !important; }
-    .stMainBlockContainer { padding-top: 0 !important; }
+    header[data-testid="stHeader"] { background: #f4f4f8 !important; }
+    * { font-family: 'Inter', sans-serif !important; }
 
-    [data-testid="stForm"] {
-        border: none !important;
-        padding: 2rem !important;
-        background: white !important;
-        border-radius: 12px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06) !important;
-    }
-    .stTextInput > label {
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
-        font-size: 0.8rem !important;
-        color: #64648c !important;
-    }
+    /* Inputs */
+    .stTextInput > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
     .stTextInput > div > div > input {
-        border: 1px solid #e2e2ea !important;
-        border-radius: 8px !important;
-        padding: 0.7rem 0.85rem !important;
-        font-family: 'Inter', sans-serif !important;
-        font-size: 0.9rem !important;
-        background: #fafafc !important;
-        color: #1e1e2e !important;
+        border: 1px solid #e2e2ea !important; border-radius: 8px !important;
+        padding: 0.7rem 0.85rem !important; font-size: 0.9rem !important;
+        background: white !important; color: #1e1e2e !important;
     }
     .stTextInput > div > div > input:focus {
         border-color: #6366f1 !important;
         box-shadow: 0 0 0 3px rgba(99,102,241,0.1) !important;
-        background: white !important;
     }
     .stTextInput > div > div > input::placeholder { color: #b0b0c0 !important; }
-    .stFormSubmitButton > button {
-        border-radius: 8px !important;
-        padding: 0.7rem !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500 !important;
-        font-size: 0.9rem !important;
-        background: #6366f1 !important;
-        color: white !important;
-        border: none !important;
-        transition: background 0.15s !important;
+    .stSelectbox > label { font-weight: 500 !important; font-size: 0.8rem !important; color: #64648c !important; }
+
+    /* Buttons */
+    .stButton > button, .stFormSubmitButton > button {
+        border-radius: 8px !important; font-weight: 500 !important; font-size: 0.85rem !important;
     }
+    .stButton > button[data-testid="stBaseButton-primary"],
+    .stFormSubmitButton > button {
+        background: #6366f1 !important; color: white !important; border: none !important;
+    }
+    .stButton > button[data-testid="stBaseButton-primary"]:hover,
     .stFormSubmitButton > button:hover { background: #4f46e5 !important; }
-    .stAlert { border-radius: 8px !important; font-family: 'Inter', sans-serif !important; }
-    /* Hide anchor links on headings */
-    a.stHeaderLink { display: none !important; }
-    h2 a, h1 a { display: none !important; }
+    .stButton > button[data-testid="stBaseButton-secondary"] {
+        background: white !important; color: #1e1e2e !important;
+        border: 1px solid #e2e2ea !important;
+    }
+    .stButton > button[data-testid="stBaseButton-secondary"]:hover {
+        background: #f4f4f8 !important;
+    }
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] { gap: 0; border-bottom: 1px solid #e2e2ea; }
+    .stTabs [data-baseweb="tab"] {
+        font-size: 0.85rem !important; font-weight: 500 !important;
+        color: #64648c !important; padding: 0.7rem 1.2rem !important;
+        border-bottom: 2px solid transparent;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #6366f1 !important; border-bottom: 2px solid #6366f1 !important;
+    }
+
+    /* Expanders */
+    .streamlit-expanderHeader { font-weight: 500 !important; font-size: 0.9rem !important; }
+
+    /* Alerts */
+    .stAlert { border-radius: 8px !important; }
+
+    /* Hide anchor links */
+    a.stHeaderLink, h1 a, h2 a { display: none !important; }
+
+    /* Dividers */
+    hr { border-color: #e2e2ea !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# ===== LOGIN-ONLY STYLES =====
+def _inject_login_styles():
+    _inject_global_styles()
+    st.markdown("""
+    <style>
+    .stMainBlockContainer { padding-top: 0 !important; }
+    [data-testid="stForm"] {
+        border: none !important; padding: 2rem !important;
+        background: white !important; border-radius: 12px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06) !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -234,6 +259,7 @@ def show_admin_login_page():
 
 # ===== ADMIN PANEL =====
 def show_admin_panel():
+    _inject_global_styles()
     st.title("🔧 Admin Panel")
 
     col1, col2, col3 = st.columns([4, 1, 1])
@@ -369,6 +395,7 @@ def show_admin_panel():
 
 # ===== BRAND DASHBOARD =====
 def show_brand_dashboard():
+    _inject_global_styles()
     brand_name = st.session_state.brand_name
     brand_data = st.session_state.brand_data
     sheet_id = brand_data.get('sheet_id')
