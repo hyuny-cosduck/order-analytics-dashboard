@@ -1186,7 +1186,11 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         return ((current - previous) / previous) * 100
 
     # ===== KPI Cards =====
-    st.subheader("📈 주요 지표")
+    if len(df_prev) > 0:
+        st.subheader("📈 주요 지표")
+        st.caption(f"비교 기간: {prev_start} ~ {prev_end} ({period_days}일)")
+    else:
+        st.subheader("📈 주요 지표")
 
     total_orders = len(order_info)
     total_amount = order_info['Order Amount'].sum()
