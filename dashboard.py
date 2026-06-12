@@ -1058,11 +1058,11 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
     df['Year-Month'] = df['Created Date'].apply(lambda x: x.strftime('%Y-%m') if pd.notna(x) else None)
     available_months = sorted(df['Year-Month'].dropna().unique(), reverse=True)
 
-    col_month, col_range = st.columns([1, 2])
-
     # Apply pending month selection from quick buttons (before widget instantiation)
     if '_pending_month_sel' in st.session_state:
         st.session_state['main_month_sel'] = st.session_state.pop('_pending_month_sel')
+
+    col_month, col_range, col_q1, col_q2, col_q3, col_q4 = st.columns([2, 3, 1, 1, 1, 1])
 
     with col_month:
         month_options = ["전체 기간"] + list(available_months)
@@ -1078,14 +1078,10 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         last_day = calendar.monthrange(year, month)[1]
         default_start = max(pd.Timestamp(year, month, 1).date(), min_date)
         default_end = min(pd.Timestamp(year, month, last_day).date(), max_date)
-        # Use a month-specific key so switching months resets value to month
-        # boundaries, but the user can still fine-tune within the month.
         range_key = f"main_range_{selected_month}"
     else:
         default_start, default_end = min_date, max_date
         range_key = "main_range"
-        # Promote any pending range (set by quick buttons on the previous run)
-        # into the widget key BEFORE the widget is instantiated.
         if '_pending_main_range' in st.session_state:
             st.session_state[range_key] = st.session_state.pop('_pending_main_range')
 
@@ -1102,34 +1098,31 @@ def show_dashboard_content(sheet_id: str, currency: str = "Rp"):
         start_date, end_date = date_range
         st.session_state['_confirmed_main_range'] = (start_date, end_date)
     else:
-        # User has picked a start date but not yet an end date — hold the
-        # previous confirmed range so the data doesn't jump mid-selection.
         if '_confirmed_main_range' in st.session_state:
             start_date, end_date = st.session_state['_confirmed_main_range']
         else:
             start_date, end_date = default_start, default_end
-
-    # Quick selection buttons — stash into a pending key, then rerun.
-    # Also reset month selector to "전체 기간" so the date_input is visible.
-    st.write("빠른 선택:")
-    quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
 
     def _queue_range(start, end):
         st.session_state['_pending_month_sel'] = "전체 기간"
         st.session_state['_pending_main_range'] = (start, end)
         st.rerun()
 
-    with quick_col1:
-        if st.button("최근 7일"):
+    with col_q1:
+        st.markdown("<div style='height:1.6rem'></div>", unsafe_allow_html=True)
+        if st.button("7일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=6), max_date)
-    with quick_col2:
-        if st.button("최근 14일"):
+    with col_q2:
+        st.markdown("<div style='height:1.6rem'></div>", unsafe_allow_html=True)
+        if st.button("14일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=13), max_date)
-    with quick_col3:
-        if st.button("최근 30일"):
+    with col_q3:
+        st.markdown("<div style='height:1.6rem'></div>", unsafe_allow_html=True)
+        if st.button("30일", use_container_width=True):
             _queue_range(max_date - datetime.timedelta(days=29), max_date)
-    with quick_col4:
-        if st.button("전체"):
+    with col_q4:
+        st.markdown("<div style='height:1.6rem'></div>", unsafe_allow_html=True)
+        if st.button("전체", use_container_width=True):
             _queue_range(min_date, max_date)
 
     # Apply date filter
