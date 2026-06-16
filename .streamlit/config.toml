@@ -1,7 +1,8 @@
 [server]
 headless = true
-enableCORS = true
-enableXsrfProtection = true
+enableCORS = false
+enableXsrfProtection = false
+enableWebsocketCompression = false
 
 [theme]
 primaryColor = "#6366f1"
