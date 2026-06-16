@@ -19,14 +19,14 @@ _cached_client: Optional[gspread.Client] = None
 _cached_config_sheet_id: Optional[str] = None
 
 
-def _retry_on_quota(fn, max_retries=3):
-    """Retry a function on 429 quota errors with exponential backoff."""
+def _retry_on_quota(fn, max_retries=5):
+    """Retry a function on 429 quota errors with short backoff to avoid Streamlit session timeout."""
     for attempt in range(max_retries):
         try:
             return fn()
         except gspread.exceptions.APIError as e:
             if e.response.status_code == 429 and attempt < max_retries - 1:
-                wait = 30 * (attempt + 1)  # 30s, 60s — enough for per-minute quota reset
+                wait = 3 * (2 ** attempt)  # 3s, 6s, 12s, 24s — keeps websocket alive
                 time.sleep(wait)
             else:
                 raise
