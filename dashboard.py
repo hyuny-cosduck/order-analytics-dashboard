@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 
-@st.cache_data(ttl=300, show_spinner=False)
+@st.cache_data(ttl=3600, show_spinner=False)
 def load_sheet_data(sheet_id: str):
     """Shared cached loader — both Dashboard and Bundle Analysis tabs reuse one cache entry."""
     df, error = sheets_manager.read_sheet_data(sheet_id)
@@ -459,7 +459,8 @@ def show_brand_dashboard():
     currency = brand_data.get('currency', 'Rp')
 
     # Preload data count for header
-    _df_preview, _err = load_sheet_data(sheet_id)
+    with st.spinner("데이터를 불러오는 중..."):
+        _df_preview, _err = load_sheet_data(sheet_id)
     if _df_preview is not None and not _err:
         _total = len(_df_preview[_df_preview.get('Order Amount', 0).apply(pd.to_numeric, errors='coerce') > 0]) if 'Order Amount' in _df_preview.columns else len(_df_preview)
         _samples = len(_df_preview[_df_preview.get('Order Amount', 0).apply(pd.to_numeric, errors='coerce') == 0]) if 'Order Amount' in _df_preview.columns else 0
