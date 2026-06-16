@@ -127,15 +127,21 @@ def read_sheet_data(sheet_id: str) -> Tuple[Optional[pd.DataFrame], Optional[str
         return None, str(e)
 
 
-def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional[str], int, int]:
+def append_data_to_sheet(sheet_id: str, df: pd.DataFrame, on_progress=None) -> Tuple[int, Optional[str], int, int]:
     """
     Append/update DataFrame rows in the sheet.
     - Updates existing rows if Order ID + SKU ID match
     - Appends new rows otherwise
     - Skips exact duplicates
+    on_progress(step, detail) is called between stages to keep callers alive.
     Returns (rows_added, error_message, rows_updated, duplicates_skipped).
     """
+    def _progress(step, detail=""):
+        if on_progress:
+            on_progress(step, detail)
+
     try:
+        _progress("시트 연결 중...")
         spreadsheet, sheet_err = get_sheet_by_id(sheet_id)
         if spreadsheet is None:
             return 0, sheet_err, 0, 0
@@ -143,7 +149,8 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         worksheet = spreadsheet.sheet1
 
         # Get existing headers
-        existing_headers = worksheet.row_values(1)
+        _progress("헤더 읽는 중...")
+        existing_headers = _retry_on_quota(lambda: worksheet.row_values(1))
 
         # Reorder DataFrame columns to match sheet headers
         df_to_append = df.copy()
@@ -164,7 +171,10 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
         df_ordered = df_ordered[existing_headers]
 
         # Get existing data
+        _progress("기존 데이터 읽는 중...")
         existing_data = _retry_on_quota(lambda: worksheet.get_all_values())
+
+        _progress(f"중복 검사 중... (기존 {len(existing_data)-1:,}행)")
 
         # Find key column indices (Order ID + SKU identifier)
         order_id_idx = existing_headers.index('Order ID') if 'Order ID' in existing_headers else None
@@ -220,28 +230,32 @@ def append_data_to_sheet(sheet_id: str, df: pd.DataFrame) -> Tuple[int, Optional
                 new_rows.append(row_values)
                 existing_rows_set.add(row_tuple)
 
-        # Perform batch updates (all at once to avoid rate limits)
+        # Perform batch updates in chunks to keep connection alive
         rows_updated = 0
         if updates:
-            batch_data = []
-            for row_num, row_data in updates:
-                batch_data.append({
-                    'range': f'A{row_num}',
-                    'values': [row_data]
-                })
-            _retry_on_quota(
-                lambda: worksheet.batch_update(batch_data, value_input_option='USER_ENTERED')
-            )
+            CHUNK = 500
+            for i in range(0, len(updates), CHUNK):
+                chunk = updates[i:i + CHUNK]
+                _progress(f"기존 행 업데이트 중... ({i + len(chunk):,}/{len(updates):,})")
+                batch_data = [{'range': f'A{row_num}', 'values': [row_data]} for row_num, row_data in chunk]
+                _retry_on_quota(
+                    lambda bd=batch_data: worksheet.batch_update(bd, value_input_option='USER_ENTERED')
+                )
             rows_updated = len(updates)
 
-        # Append new rows (also batched)
+        # Append new rows in chunks
         rows_added = 0
         if new_rows:
-            _retry_on_quota(
-                lambda: worksheet.append_rows(new_rows, value_input_option='USER_ENTERED')
-            )
+            CHUNK = 500
+            for i in range(0, len(new_rows), CHUNK):
+                chunk = new_rows[i:i + CHUNK]
+                _progress(f"새 행 추가 중... ({i + len(chunk):,}/{len(new_rows):,})")
+                _retry_on_quota(
+                    lambda c=chunk: worksheet.append_rows(c, value_input_option='USER_ENTERED')
+                )
             rows_added = len(new_rows)
 
+        _progress("완료!")
         return rows_added, None, rows_updated, duplicates_skipped
 
     except Exception as e:

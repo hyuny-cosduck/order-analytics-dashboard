@@ -956,11 +956,20 @@ def show_upload_section(sheet_id: str, brand_name: str):
 
             # Upload button
             if st.button("📤 Append to Google Sheet", type="primary"):
-                with st.spinner("Uploading data... (checking for duplicates)"):
-                    rows_added, error, rows_updated, duplicates_skipped = sheets_manager.append_data_to_sheet(sheet_id, df_upload)
+                with st.status("업로드 중...", expanded=True) as status:
+                    def _on_progress(step, detail=""):
+                        status.update(label=step)
+                        st.write(detail if detail else step)
+
+                    rows_added, error, rows_updated, duplicates_skipped = sheets_manager.append_data_to_sheet(
+                        sheet_id, df_upload, on_progress=_on_progress
+                    )
+
                     if error:
+                        status.update(label="업로드 실패", state="error")
                         st.error(f"Upload failed: {error}")
                     else:
+                        status.update(label="업로드 완료!", state="complete")
                         if rows_added > 0:
                             st.success(f"Added **{rows_added:,}** new rows")
                         if rows_updated > 0:
